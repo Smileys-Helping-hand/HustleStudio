@@ -1,114 +1,71 @@
-import { useEffect, useState } from "react";
-import { collection, getDocs, orderBy, query } from "firebase/firestore";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
-import { motion } from "framer-motion";
+import React, { useEffect, useState } from "react";
 import { db } from "../lib/firebase";
+import { collection, getDocs } from "firebase/firestore";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import jsPDF from "jspdf";
+import "jspdf-autotable";
+import ExcelJS from "exceljs";
+import { saveAs } from "file-saver";
 
-const Reports = () => {
+export default function Reports() {
   const [reports, setReports] = useState([]);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchReports = async () => {
-      try {
-        const reportQuery = query(collection(db, "reports"), orderBy("total", "desc"));
-        const snapshot = await getDocs(reportQuery);
-        setReports(snapshot.docs.map((docSnapshot) => ({ id: docSnapshot.id, ...docSnapshot.data() })));
-      } catch (error) {
-        console.error("Failed to fetch reports", error);
-      } finally {
-        setLoading(false);
-      }
+    const loadReports = async () => {
+      const snapshot = await getDocs(collection(db, "reports"));
+      const data = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      data.sort((a, b) => new Date(a.id) - new Date(b.id));
+      setReports(data);
     };
-
-    fetchReports();
+    loadReports();
   }, []);
 
   const exportPDF = () => {
     const doc = new jsPDF();
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(18);
-    doc.text("Side Hustle Studio — Revenue Reports", 14, 22);
-    doc.setFontSize(11);
-    doc.setTextColor(100);
-    doc.text("Generated automatically from your Firestore data", 14, 30);
-
-    autoTable(doc, {
-      startY: 36,
-      head: [["Date", "Total", "Notes"]],
-      body: reports.map((report) => [
-        report.id,
-        `$${Number(report.total ?? 0).toFixed(2)}`,
-        report.notes ?? "",
-      ]),
-      headStyles: { fillColor: [247, 92, 52] },
-      styles: { fontSize: 11 },
+    doc.text("Daily Earnings Report", 14, 15);
+    doc.autoTable({
+      head: [["Date", "Total"]],
+      body: reports.map((r) => [r.id, `R${r.total.toFixed(2)}`]),
     });
+    doc.save("DailyReports.pdf");
+  };
 
-    doc.save("sidehustlestudio-reports.pdf");
+  const exportExcel = async () => {
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet("Reports");
+    sheet.columns = [
+      { header: "Date", key: "id", width: 15 },
+      { header: "Total", key: "total", width: 15 },
+    ];
+    sheet.addRows(reports);
+    const buffer = await workbook.xlsx.writeBuffer();
+    saveAs(new Blob([buffer]), "DailyReports.xlsx");
   };
 
   return (
-    <div className="space-y-8">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-3xl font-semibold text-white">Reports</h1>
-          <p className="text-white/60">Generate PDF reports of your studio performance.</p>
-        </div>
-        <button
-          type="button"
-          onClick={exportPDF}
-          className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-6 py-2 text-sm font-semibold text-white transition hover:bg-white/10"
-        >
-          Export PDF
-        </button>
-      </div>
-
-      <div className="overflow-hidden rounded-3xl border border-white/5 bg-black/40">
-        <table className="min-w-full divide-y divide-white/5 text-sm">
-          <thead className="bg-white/5 text-xs uppercase tracking-widest text-white/60">
-            <tr>
-              <th className="px-6 py-3 text-left">Date</th>
-              <th className="px-6 py-3 text-right">Total</th>
-              <th className="px-6 py-3 text-left">Notes</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-white/5 text-white/80">
-            {loading && (
-              <tr>
-                <td colSpan="3" className="px-6 py-6 text-center text-white/60">
-                  Loading reports...
-                </td>
-              </tr>
-            )}
-            {!loading && reports.length === 0 && (
-              <tr>
-                <td colSpan="3" className="px-6 py-6 text-center text-white/60">
-                  No reports found. Run <code>npm run seed</code> to generate sample data.
-                </td>
-              </tr>
-            )}
-            {reports.map((report) => (
-              <motion.tr
-                key={report.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.2 }}
-                className="hover:bg-white/5"
-              >
-                <td className="px-6 py-4 font-semibold text-white">{report.id}</td>
-                <td className="px-6 py-4 text-right font-medium text-white">
-                  ${Number(report.total ?? 0).toFixed(2)}
-                </td>
-                <td className="px-6 py-4">{report.notes ?? ""}</td>
-              </motion.tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+    <div className="max-w-5xl mx-auto py-16 px-6 animate-fadeIn">
+      <h1 className="text-3xl font-bold mb-6 text-center">📈 Daily Earnings</h1>
+      {reports.length === 0 ? (
+        <p className="text-gray-400 text-center">No reports yet</p>
+      ) : (
+        <>
+          <div className="bg-gray-900 rounded-2xl p-6 shadow-xl">
+            <ResponsiveContainer width="100%" height={350}>
+              <LineChart data={reports}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#444" />
+                <XAxis dataKey="id" stroke="#aaa" />
+                <YAxis stroke="#aaa" />
+                <Tooltip contentStyle={{ backgroundColor: "#1f1f1f", border: "none", color: "#fff" }} />
+                <Line type="monotone" dataKey="total" stroke="#a855f7" strokeWidth={3} dot />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="flex justify-center gap-4 mt-6">
+            <button onClick={exportPDF} className="bg-purple-600 px-4 py-2 rounded-lg">📄 PDF</button>
+            <button onClick={exportExcel} className="bg-green-600 px-4 py-2 rounded-lg">📊 Excel</button>
+          </div>
+        </>
+      )}
     </div>
   );
-};
-
-export default Reports;
+}

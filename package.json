@@ -12,18 +12,19 @@
     "setup": "npm install && npm run seed"
   },
   "dependencies": {
-    "firebase": "^10.12.3",
+    "@headlessui/react": "^1.7.18",
+    "exceljs": "^4.4.0",
+    "file-saver": "^2.0.5",
+    "firebase": "^12.5.0",
     "framer-motion": "^11.2.12",
-    "jspdf": "^2.5.1",
-    "jspdf-autotable": "^3.8.3",
+    "jspdf": "^3.0.3",
+    "jspdf-autotable": "^5.0.2",
+    "prop-types": "^15.8.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-hot-toast": "^2.4.1",
     "react-router-dom": "^6.27.0",
-    "recharts": "^2.13.3",
-    "xlsx": "^0.18.5",
-    "prop-types": "^15.8.1",
-    "@headlessui/react": "^1.7.18"
+    "recharts": "^2.13.3"
   },
   "devDependencies": {
     "@types/react": "^18.3.3",
@@ -37,5 +38,6 @@
     "postcss": "^8.4.41",
     "tailwindcss": "^3.4.7",
     "vite": "^5.4.0"
-  }
+  },
+  "sidehustlestudio_fixed": true
 }

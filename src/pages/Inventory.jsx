@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { collection, getDocs, orderBy, query } from "firebase/firestore";
-import { utils, writeFileXLSX } from "xlsx";
+import ExcelJS from "exceljs";
+import { saveAs } from "file-saver";
 import { motion } from "framer-motion";
 import { db } from "../lib/firebase";
 
@@ -26,17 +27,29 @@ const Inventory = () => {
 
   const lowStockItems = useMemo(() => items.filter((item) => (item.quantity ?? 0) < 10), [items]);
 
-  const exportToExcel = () => {
-    const worksheetData = items.map((item) => ({
-      Name: item.name ?? item.id,
-      Category: item.category ?? "",
-      Quantity: item.quantity ?? 0,
-      Price: item.price ?? 0,
-    }));
-    const worksheet = utils.json_to_sheet(worksheetData);
-    const workbook = utils.book_new();
-    utils.book_append_sheet(workbook, worksheet, "Inventory");
-    writeFileXLSX(workbook, "sidehustlestudio-inventory.xlsx");
+  const exportToExcel = async () => {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Inventory");
+    worksheet.columns = [
+      { header: "Name", key: "name", width: 20 },
+      { header: "Category", key: "category", width: 15 },
+      { header: "Quantity", key: "quantity", width: 12 },
+      { header: "Price", key: "price", width: 12 },
+    ];
+
+    worksheet.addRows(
+      items.map((item) => ({
+        name: item.name ?? item.id,
+        category: item.category ?? "",
+        quantity: item.quantity ?? 0,
+        price: item.price ?? 0,
+      }))
+    );
+
+    worksheet.getColumn(4).numFmt = "$0.00";
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    saveAs(new Blob([buffer]), "sidehustlestudio-inventory.xlsx");
   };
 
   return (
