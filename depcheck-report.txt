@@ -1,0 +1,15 @@
+Unused devDependencies
+* @types/react
+* @types/react-dom
+* autoprefixer
+* eslint-plugin-import
+* eslint-plugin-react-refresh
+* depcheck
+* madge
+* postcss
+* prettier
+* react-lazyload
+* source-map-explorer
+* tailwindcss
+* vite-plugin-eslint
+* webpack-bundle-analyzer
