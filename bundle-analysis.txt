@@ -1,0 +1,4 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+dist/assets/index-DdC652E_.js
+  Your source map refers to generated column Infinity on line 10, but the source only contains 6667 column(s) on that line.
+  Check that you are using the correct source map.

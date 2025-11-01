@@ -20,3 +20,11 @@ body {
     radial-gradient(circle at top left, rgba(255, 127, 80, 0.15), transparent 60%),
     radial-gradient(circle at bottom right, rgba(34, 211, 238, 0.1), transparent 55%), #0b0b12;
 }
+
+.btn-primary {
+  @apply inline-flex items-center justify-center rounded-lg bg-purple-600 px-4 py-2 font-semibold text-white shadow-lg transition hover:bg-purple-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900;
+}
+
+.btn-success {
+  @apply inline-flex items-center justify-center rounded-lg bg-green-600 px-4 py-2 font-semibold text-white shadow-lg transition hover:bg-green-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900;
+}

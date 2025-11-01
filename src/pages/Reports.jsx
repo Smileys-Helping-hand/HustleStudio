@@ -70,11 +70,11 @@ export default function Reports() {
               </LineChart>
             </ResponsiveContainer>
           </div>
-          <div className="flex justify-center gap-4 mt-6">
-            <button onClick={exportPDF} className="bg-purple-600 px-4 py-2 rounded-lg">
+          <div className="mt-6 flex justify-center gap-4">
+            <button onClick={exportPDF} className="btn-primary">
               📄 PDF
             </button>
-            <button onClick={exportExcel} className="bg-green-600 px-4 py-2 rounded-lg">
+            <button onClick={exportExcel} className="btn-success">
               📊 Excel
             </button>
           </div>
