@@ -1,18 +1,26 @@
-import React, { useEffect, useState } from "react";
-import { db } from "../lib/firebase";
-import { collection, getDocs } from "firebase/firestore";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import jsPDF from "jspdf";
-import "jspdf-autotable";
-import ExcelJS from "exceljs";
-import { saveAs } from "file-saver";
+import React, { useEffect, useState } from 'react';
+import { db } from '../lib/firebase';
+import { collection, getDocs } from 'firebase/firestore';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from 'recharts';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
+import ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
 
 export default function Reports() {
   const [reports, setReports] = useState([]);
 
   useEffect(() => {
     const loadReports = async () => {
-      const snapshot = await getDocs(collection(db, "reports"));
+      const snapshot = await getDocs(collection(db, 'reports'));
       const data = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
       data.sort((a, b) => new Date(a.id) - new Date(b.id));
       setReports(data);
@@ -22,24 +30,24 @@ export default function Reports() {
 
   const exportPDF = () => {
     const doc = new jsPDF();
-    doc.text("Daily Earnings Report", 14, 15);
+    doc.text('Daily Earnings Report', 14, 15);
     doc.autoTable({
-      head: [["Date", "Total"]],
+      head: [['Date', 'Total']],
       body: reports.map((r) => [r.id, `R${r.total.toFixed(2)}`]),
     });
-    doc.save("DailyReports.pdf");
+    doc.save('DailyReports.pdf');
   };
 
   const exportExcel = async () => {
     const workbook = new ExcelJS.Workbook();
-    const sheet = workbook.addWorksheet("Reports");
+    const sheet = workbook.addWorksheet('Reports');
     sheet.columns = [
-      { header: "Date", key: "id", width: 15 },
-      { header: "Total", key: "total", width: 15 },
+      { header: 'Date', key: 'id', width: 15 },
+      { header: 'Total', key: 'total', width: 15 },
     ];
     sheet.addRows(reports);
     const buffer = await workbook.xlsx.writeBuffer();
-    saveAs(new Blob([buffer]), "DailyReports.xlsx");
+    saveAs(new Blob([buffer]), 'DailyReports.xlsx');
   };
 
   return (
@@ -55,14 +63,20 @@ export default function Reports() {
                 <CartesianGrid strokeDasharray="3 3" stroke="#444" />
                 <XAxis dataKey="id" stroke="#aaa" />
                 <YAxis stroke="#aaa" />
-                <Tooltip contentStyle={{ backgroundColor: "#1f1f1f", border: "none", color: "#fff" }} />
+                <Tooltip
+                  contentStyle={{ backgroundColor: '#1f1f1f', border: 'none', color: '#fff' }}
+                />
                 <Line type="monotone" dataKey="total" stroke="#a855f7" strokeWidth={3} dot />
               </LineChart>
             </ResponsiveContainer>
           </div>
           <div className="flex justify-center gap-4 mt-6">
-            <button onClick={exportPDF} className="bg-purple-600 px-4 py-2 rounded-lg">📄 PDF</button>
-            <button onClick={exportExcel} className="bg-green-600 px-4 py-2 rounded-lg">📊 Excel</button>
+            <button onClick={exportPDF} className="bg-purple-600 px-4 py-2 rounded-lg">
+              📄 PDF
+            </button>
+            <button onClick={exportExcel} className="bg-green-600 px-4 py-2 rounded-lg">
+              📊 Excel
+            </button>
           </div>
         </>
       )}

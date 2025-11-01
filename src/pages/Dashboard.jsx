@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
-import { collection, getDocs, limit, orderBy, query } from "firebase/firestore";
-import { motion } from "framer-motion";
-import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { db } from "../lib/firebase";
-import { useAuth } from "../context/AuthContext.jsx";
-import MetricCard from "../components/MetricCard.jsx";
+import { useEffect, useMemo, useState } from 'react';
+import { collection, getDocs, limit, orderBy, query } from 'firebase/firestore';
+import { motion } from 'framer-motion';
+import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { db } from '../lib/firebase';
+import { useAuth } from '../context/AuthContext.jsx';
+import MetricCard from '../components/MetricCard.jsx';
 
 const Dashboard = () => {
   const { role } = useAuth();
@@ -15,13 +15,13 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const inventorySnapshot = await getDocs(collection(db, "inventory"));
+        const inventorySnapshot = await getDocs(collection(db, 'inventory'));
         const inventoryItems = inventorySnapshot.docs.map((docSnapshot) => ({
           id: docSnapshot.id,
           ...docSnapshot.data(),
         }));
 
-        const reportQuery = query(collection(db, "reports"), orderBy("total", "desc"), limit(7));
+        const reportQuery = query(collection(db, 'reports'), orderBy('total', 'desc'), limit(7));
         const reportSnapshot = await getDocs(reportQuery);
         const reportItems = reportSnapshot.docs.map((docSnapshot) => ({
           id: docSnapshot.id,
@@ -31,7 +31,7 @@ const Dashboard = () => {
         setInventory(inventoryItems);
         setReports(reportItems);
       } catch (error) {
-        console.error("Unable to load dashboard data", error);
+        console.error('Unable to load dashboard data', error);
       } finally {
         setLoading(false);
       }
@@ -43,30 +43,34 @@ const Dashboard = () => {
   const chartData = useMemo(() => {
     if (reports.length === 0) {
       return [
-        { day: "Mon", revenue: 800 },
-        { day: "Tue", revenue: 950 },
-        { day: "Wed", revenue: 720 },
-        { day: "Thu", revenue: 1180 },
-        { day: "Fri", revenue: 1380 },
-        { day: "Sat", revenue: 1620 },
-        { day: "Sun", revenue: 910 },
+        { day: 'Mon', revenue: 800 },
+        { day: 'Tue', revenue: 950 },
+        { day: 'Wed', revenue: 720 },
+        { day: 'Thu', revenue: 1180 },
+        { day: 'Fri', revenue: 1380 },
+        { day: 'Sat', revenue: 1620 },
+        { day: 'Sun', revenue: 910 },
       ];
     }
 
-    return reports
-      .map((item) => ({ day: item.id, revenue: item.total ?? 0 }))
-      .reverse();
+    return reports.map((item) => ({ day: item.id, revenue: item.total ?? 0 })).reverse();
   }, [reports]);
 
   const totalInventory = inventory.reduce((acc, item) => acc + (item.quantity ?? 0), 0);
-  const totalValue = inventory.reduce((acc, item) => acc + (item.quantity ?? 0) * (item.price ?? 0), 0);
+  const totalValue = inventory.reduce(
+    (acc, item) => acc + (item.quantity ?? 0) * (item.price ?? 0),
+    0
+  );
 
   return (
     <div className="space-y-8">
       <div className="space-y-3">
-        <h1 className="text-3xl font-semibold text-white">Welcome back, {role === "admin" ? "Captain" : "Teammate"} 👋</h1>
+        <h1 className="text-3xl font-semibold text-white">
+          Welcome back, {role === 'admin' ? 'Captain' : 'Teammate'} 👋
+        </h1>
         <p className="text-white/60">
-          Monitor revenue trends, inventory health, and performance insights for your Side Hustle Studio.
+          Monitor revenue trends, inventory health, and performance insights for your Side Hustle
+          Studio.
         </p>
       </div>
 
@@ -102,14 +106,20 @@ const Dashboard = () => {
                 <YAxis stroke="#888" tickFormatter={(value) => `$${value}`} />
                 <Tooltip
                   contentStyle={{
-                    background: "rgba(17, 17, 24, 0.9)",
-                    borderRadius: "1rem",
-                    border: "1px solid rgba(255,255,255,0.1)",
-                    color: "white",
+                    background: 'rgba(17, 17, 24, 0.9)',
+                    borderRadius: '1rem',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    color: 'white',
                   }}
-                  formatter={(value) => [`$${Number(value).toLocaleString()}`, "Revenue"]}
+                  formatter={(value) => [`$${Number(value).toLocaleString()}`, 'Revenue']}
                 />
-                <Line type="monotone" dataKey="revenue" stroke="#fb923c" strokeWidth={3} dot={false} />
+                <Line
+                  type="monotone"
+                  dataKey="revenue"
+                  stroke="#fb923c"
+                  strokeWidth={3}
+                  dot={false}
+                />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -122,12 +132,16 @@ const Dashboard = () => {
         >
           <div>
             <h2 className="text-lg font-semibold text-white">Low stock alerts</h2>
-            <p className="text-sm text-white/50">Automatically generated from your Firestore inventory</p>
+            <p className="text-sm text-white/50">
+              Automatically generated from your Firestore inventory
+            </p>
           </div>
           <div className="space-y-3">
             {loading && <p className="text-white/50">Scanning inventory...</p>}
             {!loading && inventory.length === 0 && (
-              <p className="text-white/50">No inventory data yet. Run the seeder to generate sample records.</p>
+              <p className="text-white/50">
+                No inventory data yet. Run the seeder to generate sample records.
+              </p>
             )}
             {inventory
               .filter((item) => (item.quantity ?? 0) < 15)
@@ -138,9 +152,13 @@ const Dashboard = () => {
                 >
                   <div>
                     <p className="font-semibold text-white">{item.name ?? item.id}</p>
-                    <p className="text-xs uppercase tracking-widest text-white/40">{item.category ?? "General"}</p>
+                    <p className="text-xs uppercase tracking-widest text-white/40">
+                      {item.category ?? 'General'}
+                    </p>
                   </div>
-                  <span className="text-sm font-semibold text-brand-500">{item.quantity ?? 0} units</span>
+                  <span className="text-sm font-semibold text-brand-500">
+                    {item.quantity ?? 0} units
+                  </span>
                 </div>
               ))}
           </div>

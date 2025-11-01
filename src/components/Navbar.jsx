@@ -1,16 +1,16 @@
-import { Fragment } from "react";
-import { Link, NavLink, useLocation } from "react-router-dom";
-import { Menu, Transition } from "@headlessui/react";
-import { motion } from "framer-motion";
-import PropTypes from "prop-types";
-import { useAuth } from "../context/AuthContext.jsx";
+import { Fragment } from 'react';
+import { Link, NavLink, useLocation } from 'react-router-dom';
+import { Menu, Transition } from '@headlessui/react';
+import { motion } from 'framer-motion';
+import PropTypes from 'prop-types';
+import { useAuth } from '../context/AuthContext.jsx';
 
 const navItems = [
-  { to: "/", label: "Dashboard" },
-  { to: "/inventory", label: "Inventory" },
-  { to: "/reports", label: "Reports" },
-  { to: "/team", label: "Team" },
-  { to: "/settings", label: "Settings" },
+  { to: '/', label: 'Dashboard' },
+  { to: '/inventory', label: 'Inventory' },
+  { to: '/reports', label: 'Reports' },
+  { to: '/team', label: 'Team' },
+  { to: '/settings', label: 'Settings' },
 ];
 
 const Navbar = () => {
@@ -31,9 +31,7 @@ const Navbar = () => {
             to={item.to}
             className={({ isActive }) =>
               `relative rounded-full px-4 py-2 transition hover:text-white ${
-                isActive || location.pathname === item.to
-                  ? "text-white"
-                  : "text-white/60"
+                isActive || location.pathname === item.to ? 'text-white' : 'text-white/60'
               }`
             }
           >
@@ -43,7 +41,7 @@ const Navbar = () => {
                   <motion.span
                     layoutId="nav-pill"
                     className="absolute inset-0 -z-10 rounded-full bg-brand-500/30"
-                    transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 25 }}
                   />
                 )}
                 {item.label}
@@ -56,8 +54,8 @@ const Navbar = () => {
       <Menu as="div" className="relative">
         <Menu.Button className="flex items-center gap-3 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-left text-sm text-white/80">
           <div>
-            <p className="font-semibold text-white">{user?.email ?? "Guest"}</p>
-            <p className="text-xs uppercase tracking-widest text-white/50">{role ?? "member"}</p>
+            <p className="font-semibold text-white">{user?.email ?? 'Guest'}</p>
+            <p className="text-xs uppercase tracking-widest text-white/50">{role ?? 'member'}</p>
           </div>
           <span className="text-lg">▾</span>
         </Menu.Button>
@@ -75,7 +73,7 @@ const Navbar = () => {
               {({ active }) => (
                 <Link
                   to="/settings"
-                  className={`block rounded-lg px-4 py-2 ${active ? "bg-white/10" : ""}`}
+                  className={`block rounded-lg px-4 py-2 ${active ? 'bg-white/10' : ''}`}
                 >
                   Profile & Settings
                 </Link>
@@ -86,7 +84,7 @@ const Navbar = () => {
                 <button
                   type="button"
                   onClick={signOut}
-                  className={`block w-full rounded-lg px-4 py-2 text-left ${active ? "bg-white/10" : ""}`}
+                  className={`block w-full rounded-lg px-4 py-2 text-left ${active ? 'bg-white/10' : ''}`}
                 >
                   Sign out
                 </button>

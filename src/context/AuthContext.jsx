@@ -1,13 +1,13 @@
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
   signOut as firebaseSignOut,
-} from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
-import PropTypes from "prop-types";
-import { auth, db } from "../lib/firebase";
-import { toast } from "react-hot-toast";
+} from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
+import PropTypes from 'prop-types';
+import { auth, db } from '../lib/firebase';
+import { toast } from 'react-hot-toast';
 
 const AuthContext = createContext({
   user: null,
@@ -32,14 +32,14 @@ export const AuthProvider = ({ children }) => {
       }
 
       try {
-        const userDoc = await getDoc(doc(db, "users", firebaseUser.uid));
+        const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
         setUser(firebaseUser);
-        setRole(userDoc.exists() ? userDoc.data().role ?? "staff" : "staff");
+        setRole(userDoc.exists() ? (userDoc.data().role ?? 'staff') : 'staff');
       } catch (error) {
-        console.error("Failed to load user profile", error);
-        toast.error("Failed to load your profile information");
+        console.error('Failed to load user profile', error);
+        toast.error('Failed to load your profile information');
         setUser(firebaseUser);
-        setRole("staff");
+        setRole('staff');
       } finally {
         setLoading(false);
       }
@@ -52,16 +52,16 @@ export const AuthProvider = ({ children }) => {
     try {
       setLoading(true);
       const credentials = await signInWithEmailAndPassword(auth, email, password);
-      const profile = await getDoc(doc(db, "users", credentials.user.uid));
+      const profile = await getDoc(doc(db, 'users', credentials.user.uid));
       setUser(credentials.user);
-      setRole(profile.exists() ? profile.data().role ?? "staff" : "staff");
-      toast.success("Welcome back! 🎉");
+      setRole(profile.exists() ? (profile.data().role ?? 'staff') : 'staff');
+      toast.success('Welcome back! 🎉');
     } catch (error) {
-      console.error("Login error", error);
-      if (error.code === "auth/invalid-credential" || error.code === "auth/wrong-password") {
-        toast.error("Invalid email or password");
+      console.error('Login error', error);
+      if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
+        toast.error('Invalid email or password');
       } else {
-        toast.error("Unable to log in right now");
+        toast.error('Unable to log in right now');
       }
       throw error;
     } finally {
@@ -75,8 +75,8 @@ export const AuthProvider = ({ children }) => {
       setUser(null);
       setRole(null);
     } catch (error) {
-      console.error("Sign-out error", error);
-      toast.error("Unable to sign out");
+      console.error('Sign-out error', error);
+      toast.error('Unable to sign out');
       throw error;
     }
   };

@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
-import { collection, getDocs, orderBy, query } from "firebase/firestore";
-import ExcelJS from "exceljs";
-import { saveAs } from "file-saver";
-import { motion } from "framer-motion";
-import { db } from "../lib/firebase";
+import { useEffect, useMemo, useState } from 'react';
+import { collection, getDocs, orderBy, query } from 'firebase/firestore';
+import ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
+import { motion } from 'framer-motion';
+import { db } from '../lib/firebase';
 
 const Inventory = () => {
   const [items, setItems] = useState([]);
@@ -12,11 +12,13 @@ const Inventory = () => {
   useEffect(() => {
     const fetchInventory = async () => {
       try {
-        const inventoryQuery = query(collection(db, "inventory"), orderBy("name"));
+        const inventoryQuery = query(collection(db, 'inventory'), orderBy('name'));
         const snapshot = await getDocs(inventoryQuery);
-        setItems(snapshot.docs.map((docSnapshot) => ({ id: docSnapshot.id, ...docSnapshot.data() })));
+        setItems(
+          snapshot.docs.map((docSnapshot) => ({ id: docSnapshot.id, ...docSnapshot.data() }))
+        );
       } catch (error) {
-        console.error("Unable to load inventory", error);
+        console.error('Unable to load inventory', error);
       } finally {
         setLoading(false);
       }
@@ -29,27 +31,27 @@ const Inventory = () => {
 
   const exportToExcel = async () => {
     const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet("Inventory");
+    const worksheet = workbook.addWorksheet('Inventory');
     worksheet.columns = [
-      { header: "Name", key: "name", width: 20 },
-      { header: "Category", key: "category", width: 15 },
-      { header: "Quantity", key: "quantity", width: 12 },
-      { header: "Price", key: "price", width: 12 },
+      { header: 'Name', key: 'name', width: 20 },
+      { header: 'Category', key: 'category', width: 15 },
+      { header: 'Quantity', key: 'quantity', width: 12 },
+      { header: 'Price', key: 'price', width: 12 },
     ];
 
     worksheet.addRows(
       items.map((item) => ({
         name: item.name ?? item.id,
-        category: item.category ?? "",
+        category: item.category ?? '',
         quantity: item.quantity ?? 0,
         price: item.price ?? 0,
       }))
     );
 
-    worksheet.getColumn(4).numFmt = "$0.00";
+    worksheet.getColumn(4).numFmt = '$0.00';
 
     const buffer = await workbook.xlsx.writeBuffer();
-    saveAs(new Blob([buffer]), "sidehustlestudio-inventory.xlsx");
+    saveAs(new Blob([buffer]), 'sidehustlestudio-inventory.xlsx');
   };
 
   return (
@@ -102,7 +104,7 @@ const Inventory = () => {
                 className="hover:bg-white/5"
               >
                 <td className="px-6 py-4 font-semibold text-white">{item.name ?? item.id}</td>
-                <td className="px-6 py-4">{item.category ?? "—"}</td>
+                <td className="px-6 py-4">{item.category ?? '—'}</td>
                 <td className="px-6 py-4 text-right font-medium text-white">
                   {item.quantity ?? 0}
                 </td>
@@ -121,9 +123,14 @@ const Inventory = () => {
             <p className="text-white/50">No low stock items right now 🎉</p>
           ) : (
             lowStockItems.map((item) => (
-              <div key={item.id} className="rounded-2xl border border-brand-500/30 bg-brand-500/10 px-4 py-3">
+              <div
+                key={item.id}
+                className="rounded-2xl border border-brand-500/30 bg-brand-500/10 px-4 py-3"
+              >
                 <p className="text-sm font-semibold text-white">{item.name ?? item.id}</p>
-                <p className="text-xs uppercase tracking-widest text-white/40">{item.category ?? "General"}</p>
+                <p className="text-xs uppercase tracking-widest text-white/40">
+                  {item.category ?? 'General'}
+                </p>
                 <p className="mt-2 text-sm text-brand-200">{item.quantity ?? 0} units remaining</p>
               </div>
             ))

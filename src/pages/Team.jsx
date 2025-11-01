@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
-import { collection, getDocs } from "firebase/firestore";
-import { motion } from "framer-motion";
-import { db } from "../lib/firebase";
+import { useEffect, useState } from 'react';
+import { collection, getDocs } from 'firebase/firestore';
+import { motion } from 'framer-motion';
+import { db } from '../lib/firebase';
 
 const Team = () => {
   const [members, setMembers] = useState([]);
@@ -9,10 +9,12 @@ const Team = () => {
   useEffect(() => {
     const fetchMembers = async () => {
       try {
-        const snapshot = await getDocs(collection(db, "users"));
-        setMembers(snapshot.docs.map((docSnapshot) => ({ id: docSnapshot.id, ...docSnapshot.data() })));
+        const snapshot = await getDocs(collection(db, 'users'));
+        setMembers(
+          snapshot.docs.map((docSnapshot) => ({ id: docSnapshot.id, ...docSnapshot.data() }))
+        );
       } catch (error) {
-        console.error("Failed to load team members", error);
+        console.error('Failed to load team members', error);
       }
     };
 
@@ -27,7 +29,9 @@ const Team = () => {
       </div>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {members.length === 0 ? (
-          <p className="text-white/50">No team members found. Seed the database to add demo accounts.</p>
+          <p className="text-white/50">
+            No team members found. Seed the database to add demo accounts.
+          </p>
         ) : (
           members.map((member, index) => (
             <motion.div
@@ -39,11 +43,15 @@ const Team = () => {
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-semibold text-white">{member.displayName ?? member.email}</p>
-                  <p className="text-xs uppercase tracking-widest text-white/40">{member.role ?? "member"}</p>
+                  <p className="text-sm font-semibold text-white">
+                    {member.displayName ?? member.email}
+                  </p>
+                  <p className="text-xs uppercase tracking-widest text-white/40">
+                    {member.role ?? 'member'}
+                  </p>
                 </div>
                 <span className="rounded-full bg-brand-500/20 px-3 py-1 text-xs font-semibold text-brand-200">
-                  {member.role === "admin" ? "Owner" : "Crew"}
+                  {member.role === 'admin' ? 'Owner' : 'Crew'}
                 </span>
               </div>
               <p className="mt-4 text-xs text-white/50">{member.email}</p>

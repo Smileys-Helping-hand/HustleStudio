@@ -1,6 +1,6 @@
-import { Navigate, Outlet } from "react-router-dom";
-import PropTypes from "prop-types";
-import { useAuth } from "../context/AuthContext.jsx";
+import { Navigate, Outlet } from 'react-router-dom';
+import PropTypes from 'prop-types';
+import { useAuth } from '../context/AuthContext.jsx';
 
 const ProtectedRoute = ({ roles = null }) => {
   const { user, role, loading } = useAuth();
