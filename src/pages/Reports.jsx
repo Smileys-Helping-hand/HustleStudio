@@ -71,10 +71,10 @@ export default function Reports() {
             </ResponsiveContainer>
           </div>
           <div className="mt-6 flex justify-center gap-4">
-            <button onClick={exportPDF} className="btn-primary">
+            <button type="button" onClick={exportPDF} className="btn-primary">
               📄 PDF
             </button>
-            <button onClick={exportExcel} className="btn-success">
+            <button type="button" onClick={exportExcel} className="btn-success">
               📊 Excel
             </button>
           </div>
