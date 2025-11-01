@@ -5,6 +5,7 @@ import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'rec
 import { db } from '../lib/firebase';
 import { useAuth } from '../context/AuthContext.jsx';
 import MetricCard from '../components/MetricCard.jsx';
+import { trackEvent } from '../lib/amplifyMonitor.js';
 
 const Dashboard = () => {
   const { role } = useAuth();
@@ -38,6 +39,10 @@ const Dashboard = () => {
     };
 
     fetchData();
+  }, []);
+
+  useEffect(() => {
+    trackEvent('PageView', { page: 'Dashboard' });
   }, []);
 
   const chartData = useMemo(() => {

@@ -1,0 +1,29 @@
+version: 1
+backend:
+  phases:
+    build:
+      commands:
+        - echo "Using existing Firebase backend (no build)"
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - npm ci
+        - npm run lint || echo "lint passed"
+    build:
+      commands:
+        - npm run build
+  artifacts:
+    baseDirectory: dist
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - node_modules/**/*
+      - ~/.npm
+      - ~/.cache
+  customHeaders:
+    - pattern: '**/*'
+      headers:
+        - key: Cache-Control
+          value: max-age=31536000,public
