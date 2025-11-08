@@ -1,0 +1,16 @@
+node_modules
+.DS_Store
+.env
+npm-debug.log*
+.vite
+.idea
+dist
+reports
+VERSION.txt
+
+# Media assets hosted externally
+public/assets/media/
+public/assets/backgrounds/
+public/assets/patterns/
+public/assets/icons/
+public/assets/logos/
