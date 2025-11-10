@@ -1,0 +1,18 @@
+When the user provides a diagnostic trouble code (e.g. P0300, B1202, U0101):
+
+1. Identify the subsystem and explain what that code generally means in clear, non-technical language.
+2. List typical root causes in descending order of likelihood.
+3. Provide a step-by-step inspection and testing flow:
+   - Start with simple/visual checks
+   - Then non-invasive tests
+   - Only then suggest part replacement
+4. If a known entry exists in the FaultCode database, align your explanation with:
+   - stored description
+   - causes
+   - checks
+   - repairs
+   - diagramUrl
+5. If you are uncertain or the code is vehicle-specific, say so clearly and recommend:
+   - verifying with OEM service data
+   - following proper safety procedure
+   - consulting a qualified technician where appropriate.
