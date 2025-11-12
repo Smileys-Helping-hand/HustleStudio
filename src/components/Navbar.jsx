@@ -8,6 +8,11 @@ import { useAuth } from '../context/AuthContext.jsx';
 const navItems = [
   { to: '/', label: 'Dashboard' },
   { to: '/inventory', label: 'Inventory' },
+  { to: '/candidates', label: 'Candidates' },
+  { to: '/cv-generator', label: 'CV Generator' },
+  { to: '/admin/recruitment-analytics', label: 'Recruitment Analytics' },
+  { to: '/admin/cv-manager', label: 'CV Manager' },
+  { to: '/admin/system-health', label: 'System Health' },
   { to: '/reports', label: 'Reports' },
   { to: '/team', label: 'Team' },
   { to: '/settings', label: 'Settings' },

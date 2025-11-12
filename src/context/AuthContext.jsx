@@ -12,6 +12,7 @@ import { toast } from 'react-hot-toast';
 const AuthContext = createContext({
   user: null,
   role: null,
+  tenantId: null,
   loading: true,
   login: async () => {},
   signOut: async () => {},
@@ -20,6 +21,7 @@ const AuthContext = createContext({
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [role, setRole] = useState(null);
+  const [tenantId, setTenantId] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -27,6 +29,7 @@ export const AuthProvider = ({ children }) => {
       if (!firebaseUser) {
         setUser(null);
         setRole(null);
+        setTenantId(null);
         setLoading(false);
         return;
       }
@@ -34,12 +37,20 @@ export const AuthProvider = ({ children }) => {
       try {
         const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
         setUser(firebaseUser);
-        setRole(userDoc.exists() ? (userDoc.data().role ?? 'staff') : 'staff');
+        if (userDoc.exists()) {
+          const data = userDoc.data();
+          setRole(data.role ?? 'staff');
+          setTenantId(data.tenantId ?? null);
+        } else {
+          setRole('staff');
+          setTenantId(null);
+        }
       } catch (error) {
         console.error('Failed to load user profile', error);
         toast.error('Failed to load your profile information');
         setUser(firebaseUser);
         setRole('staff');
+        setTenantId(null);
       } finally {
         setLoading(false);
       }
@@ -54,7 +65,14 @@ export const AuthProvider = ({ children }) => {
       const credentials = await signInWithEmailAndPassword(auth, email, password);
       const profile = await getDoc(doc(db, 'users', credentials.user.uid));
       setUser(credentials.user);
-      setRole(profile.exists() ? (profile.data().role ?? 'staff') : 'staff');
+      if (profile.exists()) {
+        const data = profile.data();
+        setRole(data.role ?? 'staff');
+        setTenantId(data.tenantId ?? null);
+      } else {
+        setRole('staff');
+        setTenantId(null);
+      }
       toast.success('Welcome back! 🎉');
     } catch (error) {
       console.error('Login error', error);
@@ -74,6 +92,7 @@ export const AuthProvider = ({ children }) => {
       await firebaseSignOut(auth);
       setUser(null);
       setRole(null);
+      setTenantId(null);
     } catch (error) {
       console.error('Sign-out error', error);
       toast.error('Unable to sign out');
@@ -85,11 +104,12 @@ export const AuthProvider = ({ children }) => {
     () => ({
       user,
       role,
+      tenantId,
       loading,
       login,
       signOut,
     }),
-    [user, role, loading]
+    [user, role, tenantId, loading]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -4,6 +4,9 @@ backend:
     build:
       commands:
         - echo "Using existing Firebase backend (no build)"
+    postBuild:
+      commands:
+        - node scripts/autoQA.mjs
 frontend:
   phases:
     preBuild:

@@ -9,7 +9,10 @@
     "lint": "cross-env ESLINT_USE_FLAT_CONFIG=false eslint \"src/**/*.{js,jsx}\"",
     "preview": "vite preview",
     "seed": "node src/initAll.js",
-    "setup": "npm install && npm run seed"
+    "setup": "npm install && npm run seed",
+    "validate:env": "node scripts/validateEnv.mjs",
+    "generate:qa": "node scripts/generateQAReport.mjs",
+    "auto:qa": "node scripts/autoQA.mjs"
   },
   "dependencies": {
     "@aws-amplify/analytics": "^7.0.65",
