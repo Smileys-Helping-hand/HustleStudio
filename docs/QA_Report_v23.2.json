@@ -1,0 +1,131 @@
+{
+  "metadata": {
+    "generatedAt": "2025-11-12T12:42:21.137Z",
+    "commit": "60ce7a50ab1bbb07c6537ad94e9a1df6d15b4bad",
+    "environment": "unknown",
+    "generator": "scripts/generateQAReport.mjs"
+  },
+  "build": {
+    "lint": {
+      "status": "⚠️ Not Run",
+      "log": []
+    },
+    "build": {
+      "status": "⚠️ Not Run",
+      "log": []
+    },
+    "automation": {
+      "status": "⚠️ Not Run",
+      "log": []
+    }
+  },
+  "firestone": {
+    "collectionsVerified": "⚠️ Not Verified",
+    "rulesStatus": "⚠️ Not Verified",
+    "storageStatus": "⚠️ Not Verified"
+  },
+  "integrations": {
+    "openAI": "⚠️ Not Verified",
+    "stripe": "⚠️ Not Verified",
+    "healthEndpoint": "⚠️ Not Verified"
+  },
+  "features": [
+    {
+      "key": "AUTH_TENANT",
+      "name": "Auth & Tenant Switching",
+      "status": "⚠️ Not Verified",
+      "details": "Feature checks not executed in the current environment. Update QA_STATUS_* variables to override."
+    },
+    {
+      "key": "DASHBOARD",
+      "name": "Dashboard KPIs",
+      "status": "⚠️ Not Verified",
+      "details": "Feature checks not executed in the current environment. Update QA_STATUS_* variables to override."
+    },
+    {
+      "key": "INVENTORY",
+      "name": "Inventory CRUD",
+      "status": "⚠️ Not Verified",
+      "details": "Feature checks not executed in the current environment. Update QA_STATUS_* variables to override."
+    },
+    {
+      "key": "TILL",
+      "name": "Till & Sales Pipeline",
+      "status": "⚠️ Not Verified",
+      "details": "Feature checks not executed in the current environment. Update QA_STATUS_* variables to override."
+    },
+    {
+      "key": "ANALYTICS",
+      "name": "Analytics Dashboards",
+      "status": "⚠️ Not Verified",
+      "details": "Feature checks not executed in the current environment. Update QA_STATUS_* variables to override."
+    },
+    {
+      "key": "FINANCE",
+      "name": "Finance & Billing",
+      "status": "⚠️ Not Verified",
+      "details": "Feature checks not executed in the current environment. Update QA_STATUS_* variables to override."
+    },
+    {
+      "key": "BI_REPORTS",
+      "name": "BI Reports & PDF",
+      "status": "⚠️ Not Verified",
+      "details": "Feature checks not executed in the current environment. Update QA_STATUS_* variables to override."
+    },
+    {
+      "key": "CANDIDATES",
+      "name": "Candidate Management",
+      "status": "⚠️ Not Verified",
+      "details": "Feature checks not executed in the current environment. Update QA_STATUS_* variables to override."
+    },
+    {
+      "key": "CANDIDATE_PROFILE",
+      "name": "Candidate Profile Actions",
+      "status": "⚠️ Not Verified",
+      "details": "Feature checks not executed in the current environment. Update QA_STATUS_* variables to override."
+    },
+    {
+      "key": "RECRUITMENT_ANALYTICS",
+      "name": "Recruitment Analytics",
+      "status": "⚠️ Not Verified",
+      "details": "Feature checks not executed in the current environment. Update QA_STATUS_* variables to override."
+    },
+    {
+      "key": "ADMIN_MODULES",
+      "name": "Admin Modules",
+      "status": "⚠️ Not Verified",
+      "details": "Feature checks not executed in the current environment. Update QA_STATUS_* variables to override."
+    },
+    {
+      "key": "AI_INTEGRATIONS",
+      "name": "AI & OpenAI Integrations",
+      "status": "⚠️ Not Verified",
+      "details": "Feature checks not executed in the current environment. Update QA_STATUS_* variables to override."
+    },
+    {
+      "key": "BI_ORCHESTRATOR",
+      "name": "BI Orchestrator",
+      "status": "⚠️ Not Verified",
+      "details": "Feature checks not executed in the current environment. Update QA_STATUS_* variables to override."
+    },
+    {
+      "key": "UX_UX",
+      "name": "UI & UX Interactions",
+      "status": "⚠️ Not Verified",
+      "details": "Feature checks not executed in the current environment. Update QA_STATUS_* variables to override."
+    },
+    {
+      "key": "PERFORMANCE",
+      "name": "Performance & Build",
+      "status": "⚠️ Not Verified",
+      "details": "Feature checks not executed in the current environment. Update QA_STATUS_* variables to override."
+    },
+    {
+      "key": "DATA_HEALTH",
+      "name": "Firestore & Storage Health",
+      "status": "⚠️ Not Verified",
+      "details": "Feature checks not executed in the current environment. Update QA_STATUS_* variables to override."
+    }
+  ],
+  "notes": "No automated QA steps were executed. Populate QA_* environment variables when running this script in CI."
+}

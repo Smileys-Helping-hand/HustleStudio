@@ -10,6 +10,12 @@ const Reports = lazy(() => import('./pages/Reports.jsx'));
 const Team = lazy(() => import('./pages/Team.jsx'));
 const Settings = lazy(() => import('./pages/Settings.jsx'));
 const Login = lazy(() => import('./pages/Login.jsx'));
+const Candidates = lazy(() => import('./pages/Candidates.jsx'));
+const CandidateProfile = lazy(() => import('./pages/CandidateProfile.jsx'));
+const CVGenerator = lazy(() => import('./pages/CVGenerator.jsx'));
+const RecruitmentAnalytics = lazy(() => import('./pages/admin/RecruitmentAnalytics.jsx'));
+const CVManager = lazy(() => import('./pages/admin/CVManager.jsx'));
+const SystemHealth = lazy(() => import('./pages/admin/SystemHealth.jsx'));
 
 const ProtectedLayout = () => {
   return (
@@ -41,6 +47,12 @@ const App = () => {
           <Route element={<ProtectedLayout />}>
             <Route index element={<Dashboard />} />
             <Route path="inventory" element={<Inventory />} />
+            <Route path="candidates" element={<Candidates />} />
+            <Route path="candidate/:id" element={<CandidateProfile />} />
+            <Route path="cv-generator" element={<CVGenerator />} />
+            <Route path="admin/recruitment-analytics" element={<RecruitmentAnalytics />} />
+            <Route path="admin/cv-manager" element={<CVManager />} />
+            <Route path="admin/system-health" element={<SystemHealth />} />
             <Route path="reports" element={<Reports />} />
             <Route path="team" element={<Team />} />
             <Route path="settings" element={<Settings />} />
