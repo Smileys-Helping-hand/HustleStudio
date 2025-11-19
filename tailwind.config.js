@@ -5,13 +5,10 @@ export default {
     extend: {
       colors: {
         brand: {
-          500: '#D4C19C',
-          600: '#BFA982',
-          700: '#9C8661',
+          500: "#ff7f50",
+          600: "#f75c34",
+          700: "#d8471f",
         },
-        gold: '#D4C19C',
-        olive: '#68785C',
-        linen: '#F7F7F5',
       },
     },
   },

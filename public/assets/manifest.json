@@ -1,0 +1,29 @@
+{
+  "brand": {
+    "logo": "https://cdn.hustlestudio.co.za/assets/logos/hustle-logo.svg",
+    "wordmarkLight": "https://cdn.hustlestudio.co.za/assets/logos/hustle-wordmark-light.svg",
+    "wordmarkDark": "https://cdn.hustlestudio.co.za/assets/logos/hustle-wordmark-dark.svg"
+  },
+  "backgrounds": {
+    "hero": "https://cdn.hustlestudio.co.za/assets/backgrounds/hero-gradient.webp",
+    "dashboard": "https://cdn.hustlestudio.co.za/assets/backgrounds/dashboard-dust.webp",
+    "login": "https://cdn.hustlestudio.co.za/assets/backgrounds/login-flare.webp",
+    "banner": "https://cdn.hustlestudio.co.za/assets/backgrounds/hustle-abstract-banner.webp"
+  },
+  "patterns": {
+    "grid": "https://cdn.hustlestudio.co.za/assets/patterns/pattern-grid.webp",
+    "wave": "https://cdn.hustlestudio.co.za/assets/patterns/pattern-wave.webp",
+    "overlay": "https://cdn.hustlestudio.co.za/assets/patterns/overlay-noise.png"
+  },
+  "icons": {
+    "dashboard": "https://cdn.hustlestudio.co.za/assets/icons/icon-dashboard.svg",
+    "reports": "https://cdn.hustlestudio.co.za/assets/icons/icon-reports.svg",
+    "inventory": "https://cdn.hustlestudio.co.za/assets/icons/icon-inventory.svg",
+    "settings": "https://cdn.hustlestudio.co.za/assets/icons/icon-settings.svg",
+    "visuals": "https://cdn.hustlestudio.co.za/assets/icons/icon-visuals.svg"
+  },
+  "media": {
+    "intro": "https://cdn.hustlestudio.co.za/assets/media/intro-loop.mp4",
+    "ambience": "https://cdn.hustlestudio.co.za/assets/media/startup-ambience.mp3"
+  }
+}
