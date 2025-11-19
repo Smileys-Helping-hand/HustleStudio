@@ -12,4 +12,15 @@ export default defineConfig({
   server: {
     port: 3010,
   },
+  build: {
+    sourcemap: true,
+    minify: 'esbuild',
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'firebase/app', 'firebase/auth', 'firebase/firestore'],
+        },
+      },
+    },
+  },
 });
