@@ -3,6 +3,7 @@ module.exports = {
   extends: [
     "eslint:recommended",
     "plugin:react/recommended",
+  
     "plugin:react-hooks/recommended",
     "plugin:jsx-a11y/recommended",
     "prettier"
@@ -13,7 +14,9 @@ module.exports = {
     "react/prop-types": "off",
     "react/react-in-jsx-scope": "off",
     "no-unused-vars": ["warn"],
-    "no-console": ["warn", { allow: ["error"] }],
+    "no-console": ["warn", { allow: ["error", "warn", "info"] }],
     "jsx-a11y/alt-text": "warn"
   }
 };
+
+

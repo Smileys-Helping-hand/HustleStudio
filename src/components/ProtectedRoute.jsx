@@ -7,7 +7,7 @@ const ProtectedRoute = ({ roles = null }) => {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-zinc-950 text-white">
+      <div className="flex min-h-screen items-center justify-center bg-[var(--theme-background)] text-[var(--theme-text)]">
         <div className="animate-pulse rounded-lg border border-white/10 bg-white/5 px-6 py-4 text-lg">
           Loading your workspace...
         </div>

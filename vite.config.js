@@ -12,4 +12,22 @@ export default defineConfig({
   server: {
     port: 3010,
   },
+  build: {
+    sourcemap: true,
+    minify: 'esbuild',
+    rollupOptions: {
+      output: {
+        // split large libraries into separate named chunks for better caching
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          firebase: ['firebase/app', 'firebase/auth', 'firebase/firestore'],
+          charts: ['recharts'],
+          pdf: ['jspdf', 'jspdf-autotable'],
+          excel: ['exceljs'],
+          filesaver: ['file-saver'],
+          html2canvas: ['html2canvas'],
+        },
+      },
+    },
+  },
 });

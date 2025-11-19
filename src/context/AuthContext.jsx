@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
@@ -12,24 +12,30 @@ import { toast } from 'react-hot-toast';
 const AuthContext = createContext({
   user: null,
   role: null,
-  tenantId: null,
   loading: true,
+  offlineMode: false,
   login: async () => {},
   signOut: async () => {},
+  reportOffline: () => {},
 });
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [role, setRole] = useState(null);
-  const [tenantId, setTenantId] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [offlineMode, setOfflineMode] = useState(false);
+
+  const reportOffline = useCallback(() => {
+    console.warn('[Firestore] Connection issue detected — switching to offline mode.');
+    setOfflineMode(true);
+  }, []);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      console.info('[AuthState] Auth change detected.', firebaseUser ? firebaseUser.uid : 'signed out');
       if (!firebaseUser) {
         setUser(null);
         setRole(null);
-        setTenantId(null);
         setLoading(false);
         return;
       }
@@ -37,79 +43,79 @@ export const AuthProvider = ({ children }) => {
       try {
         const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
         setUser(firebaseUser);
-        if (userDoc.exists()) {
-          const data = userDoc.data();
-          setRole(data.role ?? 'staff');
-          setTenantId(data.tenantId ?? null);
-        } else {
-          setRole('staff');
-          setTenantId(null);
-        }
+        setRole(userDoc.exists() ? userDoc.data().role ?? 'staff' : 'staff');
+        setOfflineMode(false);
       } catch (error) {
-        console.error('Failed to load user profile', error);
-        toast.error('Failed to load your profile information');
+        console.error('[Firestore] Failed to load user profile.', error);
+        toast.error('Profile is unavailable — using offline defaults.');
         setUser(firebaseUser);
         setRole('staff');
-        setTenantId(null);
+        reportOffline();
       } finally {
         setLoading(false);
       }
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [reportOffline]);
 
-  const login = async (email, password) => {
-    try {
-      setLoading(true);
-      const credentials = await signInWithEmailAndPassword(auth, email, password);
-      const profile = await getDoc(doc(db, 'users', credentials.user.uid));
-      setUser(credentials.user);
-      if (profile.exists()) {
-        const data = profile.data();
-        setRole(data.role ?? 'staff');
-        setTenantId(data.tenantId ?? null);
-      } else {
-        setRole('staff');
-        setTenantId(null);
+  const login = useCallback(
+    async (email, password) => {
+      try {
+        setLoading(true);
+        const credentials = await signInWithEmailAndPassword(auth, email, password);
+        console.info('[AuthState] Login successful.', credentials.user.uid);
+        try {
+          const profile = await getDoc(doc(db, 'users', credentials.user.uid));
+          setRole(profile.exists() ? profile.data().role ?? 'staff' : 'staff');
+          setOfflineMode(false);
+        } catch (profileError) {
+          console.error('[Firestore] Unable to load profile after login.', profileError);
+          toast.error('Profile unavailable — continuing in offline mode.');
+          setRole('staff');
+          reportOffline();
+        }
+        setUser(credentials.user);
+        toast.success('Welcome back to Hustle Studio!');
+      } catch (error) {
+        console.error('[AuthState] Login error.', error);
+        if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
+          toast.error('Invalid email or password');
+        } else {
+          toast.error('Unable to log in right now');
+        }
+        throw error;
+      } finally {
+        setLoading(false);
       }
-      toast.success('Welcome back! 🎉');
-    } catch (error) {
-      console.error('Login error', error);
-      if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
-        toast.error('Invalid email or password');
-      } else {
-        toast.error('Unable to log in right now');
-      }
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
+    },
+    [reportOffline]
+  );
 
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     try {
       await firebaseSignOut(auth);
+      console.info('[AuthState] User signed out.');
       setUser(null);
       setRole(null);
-      setTenantId(null);
     } catch (error) {
-      console.error('Sign-out error', error);
+      console.error('[AuthState] Sign-out error.', error);
       toast.error('Unable to sign out');
       throw error;
     }
-  };
+  }, []);
 
   const value = useMemo(
     () => ({
       user,
       role,
-      tenantId,
       loading,
+      offlineMode,
       login,
       signOut,
+      reportOffline,
     }),
-    [user, role, tenantId, loading]
+    [user, role, loading, offlineMode, reportOffline, login, signOut]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

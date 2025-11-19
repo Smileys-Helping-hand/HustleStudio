@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { toast } from 'react-hot-toast';
+import { ASSETS } from '@/config/assets.js';
 
 const presets = [
   { email: 'admin@studio.com', label: 'Log in as Admin' },
@@ -36,19 +37,20 @@ const Login = () => {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-black via-zinc-900 to-zinc-950 px-4">
+    <div
+      className="flex min-h-screen items-center justify-center bg-cover bg-center px-4"
+      style={{ backgroundImage: `url(${ASSETS.backgroundLogin})` }}
+    >
       <motion.div
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-md rounded-2xl border border-white/10 bg-black/70 p-8 shadow-2xl backdrop-blur"
+        className="w-full max-w-md rounded-2xl border border-white/10 bg-black/70 p-8 shadow-[0_35px_80px_rgba(0,0,0,0.45)] backdrop-blur"
       >
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-brand-500/20 text-3xl text-brand-500">
-            ⚡
-          </div>
-          <h1 className="text-2xl font-semibold text-white">Welcome back</h1>
+          <img src={ASSETS.logoMain} alt="Hustle Studio" className="mx-auto mb-4 h-14 w-14" />
+          <h1 className="text-2xl font-semibold text-white">Welcome to Hustle Studio</h1>
           <p className="text-sm text-white/60">
-            Log in to manage your Side Hustle Studio operations.
+            Log in to resume your cinematic operations cockpit.
           </p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -90,9 +92,9 @@ const Login = () => {
             whileTap={{ scale: 0.98 }}
             type="submit"
             disabled={isLoading}
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-brand-600 px-4 py-3 font-semibold text-white shadow-lg shadow-brand-500/20 transition hover:bg-brand-500 disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex w-full items-center justify-center gap-2 rounded-full bg-[var(--theme-highlight)]/80 px-4 py-3 font-semibold uppercase tracking-[0.3em] text-white shadow-[0_18px_45px_rgba(184,164,108,0.25)] transition hover:bg-[var(--theme-highlight)] disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {isLoading ? 'Signing in...' : 'Sign in'}
+            {isLoading ? 'Signing in...' : 'Enter Studio'}
           </motion.button>
         </form>
 

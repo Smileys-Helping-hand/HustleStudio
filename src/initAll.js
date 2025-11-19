@@ -36,13 +36,13 @@ async function seedAuthAndFirestore() {
       setDoc(doc(usersCollection, adminUid), {
         email: 'admin@studio.com',
         role: 'admin',
-        displayName: 'Side Hustle Admin',
+        displayName: 'Hustle Studio Admin',
         updatedAt: serverTimestamp(),
       }),
       setDoc(doc(usersCollection, staffUid), {
         email: 'staff@studio.com',
         role: 'staff',
-        displayName: 'Side Hustle Staff',
+        displayName: 'Hustle Studio Staff',
         updatedAt: serverTimestamp(),
       }),
     ]);

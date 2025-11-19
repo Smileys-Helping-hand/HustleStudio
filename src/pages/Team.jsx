@@ -2,9 +2,12 @@ import { useEffect, useState } from 'react';
 import { collection, getDocs } from 'firebase/firestore';
 import { motion } from 'framer-motion';
 import { db } from '../lib/firebase';
+import { mockTeam } from '../mockData/team.js';
+import { useAuth } from '../context/AuthContext.jsx';
 
 const Team = () => {
-  const [members, setMembers] = useState([]);
+  const { reportOffline } = useAuth();
+  const [members, setMembers] = useState(mockTeam);
 
   useEffect(() => {
     const fetchMembers = async () => {
@@ -14,24 +17,24 @@ const Team = () => {
           snapshot.docs.map((docSnapshot) => ({ id: docSnapshot.id, ...docSnapshot.data() }))
         );
       } catch (error) {
-        console.error('Failed to load team members', error);
+        console.error('[Firestore] Failed to load team members', error);
+        reportOffline();
+        setMembers(mockTeam);
       }
     };
 
     fetchMembers();
-  }, []);
+  }, [reportOffline]);
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-semibold text-white">Your team</h1>
-        <p className="text-white/60">An overview of authenticated users and their roles.</p>
+        <h1 className="text-3xl font-semibold text-white">Studio crew</h1>
+        <p className="text-white/60">Authenticated teammates with offline fallbacks for role lookups.</p>
       </div>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {members.length === 0 ? (
-          <p className="text-white/50">
-            No team members found. Seed the database to add demo accounts.
-          </p>
+          <p className="text-white/50">No team members yet — offline cache shown.</p>
         ) : (
           members.map((member, index) => (
             <motion.div

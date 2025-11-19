@@ -1,12 +1,15 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { collection, getDocs, orderBy, query } from 'firebase/firestore';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 import { motion } from 'framer-motion';
 import { db } from '../lib/firebase';
+import { useAuth } from '../context/AuthContext.jsx';
+import { mockInventory } from '../mockData/inventory.js';
 
 const Inventory = () => {
-  const [items, setItems] = useState([]);
+  const { reportOffline } = useAuth();
+  const [items, setItems] = useState(mockInventory);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -14,29 +17,38 @@ const Inventory = () => {
       try {
         const inventoryQuery = query(collection(db, 'inventory'), orderBy('name'));
         const snapshot = await getDocs(inventoryQuery);
-        setItems(
-          snapshot.docs.map((docSnapshot) => ({ id: docSnapshot.id, ...docSnapshot.data() }))
-        );
+        const data = snapshot.docs.map((docSnapshot) => ({ id: docSnapshot.id, ...docSnapshot.data() }));
+        setItems(data.length ? data : mockInventory);
       } catch (error) {
-        console.error('Unable to load inventory', error);
+        console.error('[Firestore] Unable to load inventory', error);
+        reportOffline();
+        setItems(mockInventory);
       } finally {
         setLoading(false);
       }
     };
 
     fetchInventory();
-  }, []);
+  }, [reportOffline]);
+
+  useEffect(() => {
+    const handleExport = () => {
+      exportToExcel();
+    };
+    document.addEventListener('dashboard-export-reports', handleExport);
+    return () => document.removeEventListener('dashboard-export-reports', handleExport);
+  }, [exportToExcel]);
 
   const lowStockItems = useMemo(() => items.filter((item) => (item.quantity ?? 0) < 10), [items]);
 
-  const exportToExcel = async () => {
+  const exportToExcel = useCallback(async () => {
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Inventory');
     worksheet.columns = [
       { header: 'Name', key: 'name', width: 20 },
       { header: 'Category', key: 'category', width: 15 },
       { header: 'Quantity', key: 'quantity', width: 12 },
-      { header: 'Price', key: 'price', width: 12 },
+      { header: 'Price (ZAR)', key: 'price', width: 16 },
     ];
 
     worksheet.addRows(
@@ -48,18 +60,18 @@ const Inventory = () => {
       }))
     );
 
-    worksheet.getColumn(4).numFmt = '$0.00';
+    worksheet.getColumn(4).numFmt = '[$R-1]#,##0.00';
 
     const buffer = await workbook.xlsx.writeBuffer();
-    saveAs(new Blob([buffer]), 'sidehustlestudio-inventory.xlsx');
-  };
+    saveAs(new Blob([buffer]), 'hustle-studio-inventory.xlsx');
+  }, [items]);
 
   return (
     <div className="space-y-8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-3xl font-semibold text-white">Inventory overview</h1>
-          <p className="text-white/60">Track every item that powers your studio experiences.</p>
+          <h1 className="text-3xl font-semibold text-white">Inventory command</h1>
+          <p className="text-white/60">Track the assets that keep Hustle Studio running — exports are offline friendly.</p>
         </div>
         <button
           type="button"
@@ -108,7 +120,7 @@ const Inventory = () => {
                 <td className="px-6 py-4 text-right font-medium text-white">
                   {item.quantity ?? 0}
                 </td>
-                <td className="px-6 py-4 text-right">${(item.price ?? 0).toFixed(2)}</td>
+                <td className="px-6 py-4 text-right">R{(item.price ?? 0).toFixed(2)}</td>
               </motion.tr>
             ))}
           </tbody>
