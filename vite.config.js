@@ -21,7 +21,6 @@ export default defineConfig({
         manualChunks: {
           vendor: ['react', 'react-dom'],
           firebase: ['firebase/app', 'firebase/auth', 'firebase/firestore'],
-          charts: ['recharts'],
           pdf: ['jspdf', 'jspdf-autotable'],
           filesaver: ['file-saver'],
           html2canvas: ['html2canvas'],
