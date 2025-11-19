@@ -21,7 +21,6 @@
     "aws-amplify": "^6.3.2",
     "aws-sdk": "^2.1582.0",
     "clsx": "^2.1.1",
-    "exceljs": "^4.4.0",
     "file-saver": "^2.0.5",
     "filesize": "^11.0.13",
     "firebase": "^12.5.0",

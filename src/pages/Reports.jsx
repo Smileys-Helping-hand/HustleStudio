@@ -69,20 +69,16 @@ export default function Reports() {
 
   const exportExcel = useCallback(async () => {
     try {
-      const ExcelJSModule = await import('exceljs');
-      const { default: ExcelJS } = ExcelJSModule;
+      // Generate CSV as a lightweight alternative to Excel (smaller bundle size)
+      const headers = ['Date', 'Total'];
+      const rows = reports.map((r) => [r.id, r.total ?? 0]);
+      const csvLines = [headers.join(','), ...rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(','))];
+      const csvContent = csvLines.join('\n');
       const { saveAs } = await import('file-saver');
-      const workbook = new ExcelJS.Workbook();
-      const sheet = workbook.addWorksheet('Reports');
-      sheet.columns = [
-        { header: 'Date', key: 'id', width: 15 },
-        { header: 'Total', key: 'total', width: 15 },
-      ];
-      sheet.addRows(reports);
-      const buffer = await workbook.xlsx.writeBuffer();
-      saveAs(new Blob([buffer]), 'hustle-daily-reports.xlsx');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      saveAs(blob, 'hustle-daily-reports.csv');
     } catch (err) {
-      console.error('[Export] Unable to create Excel export', err);
+      console.error('[Export] Unable to create CSV export', err);
     }
   }, [reports]);
 

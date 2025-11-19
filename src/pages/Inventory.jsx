@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { collection, getDocs, orderBy, query } from 'firebase/firestore';
-import ExcelJS from 'exceljs';
-import { saveAs } from 'file-saver';
+// Use lightweight CSV export instead of ExcelJS to reduce bundle size
 import { motion } from 'framer-motion';
 import { db } from '../lib/firebase';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -42,28 +41,22 @@ const Inventory = () => {
   const lowStockItems = useMemo(() => items.filter((item) => (item.quantity ?? 0) < 10), [items]);
 
   const exportToExcel = useCallback(async () => {
-    const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet('Inventory');
-    worksheet.columns = [
-      { header: 'Name', key: 'name', width: 20 },
-      { header: 'Category', key: 'category', width: 15 },
-      { header: 'Quantity', key: 'quantity', width: 12 },
-      { header: 'Price (ZAR)', key: 'price', width: 16 },
-    ];
-
-    worksheet.addRows(
-      items.map((item) => ({
-        name: item.name ?? item.id,
-        category: item.category ?? '',
-        quantity: item.quantity ?? 0,
-        price: item.price ?? 0,
-      }))
-    );
-
-    worksheet.getColumn(4).numFmt = '[$R-1]#,##0.00';
-
-    const buffer = await workbook.xlsx.writeBuffer();
-    saveAs(new Blob([buffer]), 'hustle-studio-inventory.xlsx');
+    try {
+      const headers = ['Name', 'Category', 'Quantity', 'Price (ZAR)'];
+      const rows = items.map((item) => [
+        item.name ?? item.id,
+        item.category ?? '',
+        item.quantity ?? 0,
+        (item.price ?? 0).toFixed(2),
+      ]);
+      const csvLines = [headers.join(','), ...rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(','))];
+      const csvContent = csvLines.join('\n');
+      const { saveAs } = await import('file-saver');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      saveAs(blob, 'hustle-studio-inventory.csv');
+    } catch (err) {
+      console.error('[Export] Unable to create CSV', err);
+    }
   }, [items]);
 
   return (

@@ -23,7 +23,6 @@ export default defineConfig({
           firebase: ['firebase/app', 'firebase/auth', 'firebase/firestore'],
           charts: ['recharts'],
           pdf: ['jspdf', 'jspdf-autotable'],
-          excel: ['exceljs'],
           filesaver: ['file-saver'],
           html2canvas: ['html2canvas'],
         },
