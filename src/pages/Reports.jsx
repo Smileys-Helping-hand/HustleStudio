@@ -27,6 +27,7 @@ const Reports = () => {
   const [sales, setSales] = useState([]);
   const [teamActivity, setTeamActivity] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [exportLoading, setExportLoading] = useState(null);
   const { activeTenantId } = useTenant();
 
   const loadData = useCallback(async () => {
@@ -93,6 +94,7 @@ const Reports = () => {
       toast.error('Select a workspace to export reports.');
       return;
     }
+    setExportLoading('pdf');
     // dynamic import to reduce initial bundle size
     const jsPDFModule = await import('jspdf');
     const JsPDF = jsPDFModule.default || jsPDFModule;
@@ -140,6 +142,7 @@ const Reports = () => {
       console.warn('[Reports] upload skipped', error);
     }
     await logEvent(activeTenantId, user?.uid, 'Exported Report', { format: 'pdf', period });
+    setExportLoading(null);
   }, [activeTenantId, period, sales, summary, teamActivity.length, user]);
 
   const exportExcel = useCallback(async () => {
@@ -147,6 +150,7 @@ const Reports = () => {
       toast.error('Select a workspace to export reports.');
       return;
     }
+    setExportLoading('excel');
     // dynamic import ExcelJS only when exporting
     const ExcelJSModule = await import('exceljs');
     const ExcelJS = ExcelJSModule.default || ExcelJSModule;
@@ -193,6 +197,7 @@ const Reports = () => {
       console.warn('[Reports] excel upload skipped', error);
     }
     await logEvent(activeTenantId, user?.uid, 'Exported Report', { format: 'xlsx', period });
+    setExportLoading(null);
   }, [activeTenantId, period, sales, summary, teamActivity.length, user]);
 
   const exportCsv = useCallback(() => {
@@ -284,17 +289,17 @@ const Reports = () => {
       </section>
 
       <div className="mt-6 flex flex-wrap justify-center gap-4">
-        <button type="button" onClick={exportCsv} className="btn-success">
-          Export CSV
+        <button type="button" onClick={exportCsv} className="btn-success" disabled={!!exportLoading}>
+          {exportLoading === 'csv' ? 'Exporting CSV…' : 'Export CSV'}
         </button>
-        <button type="button" onClick={exportPdf} className="btn-primary">
-          Export PDF
+        <button type="button" onClick={exportPdf} className="btn-primary" disabled={!!exportLoading}>
+          {exportLoading === 'pdf' ? 'Exporting PDF…' : 'Export PDF'}
         </button>
-        <button type="button" onClick={exportExcel} className="btn-success">
-          Export Excel
+        <button type="button" onClick={exportExcel} className="btn-success" disabled={!!exportLoading}>
+          {exportLoading === 'excel' ? 'Exporting Excel…' : 'Export Excel'}
         </button>
-        <button type="button" onClick={exportSheets} className="btn-primary">
-          Google Sheets
+        <button type="button" onClick={exportSheets} className="btn-primary" disabled={!!exportLoading}>
+          {exportLoading === 'sheets' ? 'Exporting…' : 'Google Sheets'}
         </button>
       </div>
 

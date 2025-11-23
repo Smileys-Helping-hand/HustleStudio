@@ -16,6 +16,7 @@ const Invoices = () => {
   const [lineItems, setLineItems] = useState([defaultLineItem]);
   const [notes, setNotes] = useState('Payment due within 7 days. Thank you for partnering with Hustle Studio.');
   const notify = useNotify();
+  const [generating, setGenerating] = useState(false);
 
   const totals = useMemo(() => {
     const subtotal = lineItems.reduce((sum, item) => sum + Number(item.quantity || 0) * Number(item.price || 0), 0);
@@ -31,6 +32,7 @@ const Invoices = () => {
   const removeLine = (index) => setLineItems((current) => current.filter((_, idx) => idx !== index));
 
   const generatePdf = async () => {
+    setGenerating(true);
       // lazy-load jsPDF and autotable plugin
       const jsPDFModule = await import('jspdf');
       const JsPDF = jsPDFModule.default || jsPDFModule;
@@ -71,6 +73,7 @@ const Invoices = () => {
         description: `${client.name} — follow up by ${dueDate.toLocaleDateString()}.`,
         type: 'info',
       });
+      setGenerating(false);
     };
 
   return (
@@ -180,8 +183,9 @@ const Invoices = () => {
             type="button"
             onClick={generatePdf}
             className="rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs uppercase tracking-[0.3em] text-white/80 transition hover:border-white/40"
+            disabled={generating}
           >
-            Download invoice PDF
+            {generating ? 'Generating…' : 'Download invoice PDF'}
           </button>
         </div>
       </motion.section>
