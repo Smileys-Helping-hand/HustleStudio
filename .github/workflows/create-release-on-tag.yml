@@ -1,0 +1,42 @@
+name: Create Release on Tag
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  create_release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Read release notes file
+        id: notes
+        run: |
+          file="RELEASE_NOTES_${GITHUB_REF_NAME}.md"
+          if [ -f "$file" ]; then
+            cat "$file" > /tmp/release_body.txt
+          elif [ -f RELEASE_NOTES.md ]; then
+            cat RELEASE_NOTES.md > /tmp/release_body.txt
+          else
+            echo "Release $GITHUB_REF_NAME" > /tmp/release_body.txt
+          fi
+          echo "body<<EOF" >> $GITHUB_OUTPUT
+          cat /tmp/release_body.txt >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub release
+        uses: actions/create-release@v1
+        with:
+          tag_name: ${{ github.ref_name }}
+          release_name: ${{ github.ref_name }}
+          body: ${{ steps.notes.outputs.body }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
