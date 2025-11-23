@@ -1,5 +1,3 @@
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
 import { saveAs } from 'file-saver';
 import { toast } from 'react-hot-toast';
 
@@ -36,8 +34,13 @@ export const exportToCSV = (rows, filename = 'export.csv') => {
   toast.success('CSV exported successfully.');
 };
 
-export const exportToPDF = ({ title = 'Report', head = [], body = [], filename = 'report.pdf' }) => {
-  const doc = new jsPDF({ orientation: 'landscape' });
+export const exportToPDF = async ({ title = 'Report', head = [], body = [], filename = 'report.pdf' }) => {
+  // lazy-load jsPDF only when needed
+  const jsPDFModule = await import('jspdf');
+  const JsPDF = jsPDFModule.default || jsPDFModule;
+  await import('jspdf-autotable');
+
+  const doc = new JsPDF({ orientation: 'landscape' });
   doc.setFontSize(16);
   doc.text(title, 14, 18);
   doc.autoTable({ head, body, startY: 26 });

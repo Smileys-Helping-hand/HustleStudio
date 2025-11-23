@@ -16,6 +16,9 @@ const CsvToWorkbook = () => {
         .filter(Boolean)
         .map((line) => line.split(','));
 
+      // dynamic-import ExcelJS only when needed
+      const ExcelJSModule = await import('exceljs');
+      const ExcelJS = ExcelJSModule.default || ExcelJSModule;
       const workbook = new ExcelJS.Workbook();
       const sheet = workbook.addWorksheet('Imported CSV');
       sheet.addRows(rows);

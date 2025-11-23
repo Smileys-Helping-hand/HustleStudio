@@ -3,9 +3,6 @@ import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tool
 import { getDocs, orderBy, query, where, Timestamp } from 'firebase/firestore';
 import { ref, uploadBytes } from 'firebase/storage';
 import { saveAs } from 'file-saver';
-import ExcelJS from 'exceljs';
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
 import { storage } from '../lib/firebase.js';
 import { tenantCollection } from '../lib/tenant.js';
 import { useTenant } from '../context/TenantContext.jsx';
@@ -96,7 +93,13 @@ const Reports = () => {
       toast.error('Select a workspace to export reports.');
       return;
     }
-    const doc = new jsPDF();
+    // dynamic import to reduce initial bundle size
+    const jsPDFModule = await import('jspdf');
+    const JsPDF = jsPDFModule.default || jsPDFModule;
+    // jspdf-autotable augments the jsPDF prototype
+    await import('jspdf-autotable');
+
+    const doc = new JsPDF();
     doc.setFontSize(16);
     doc.text(`Hustle Studio • ${period.toUpperCase()} Report`, 14, 18);
     doc.setFontSize(11);
@@ -144,6 +147,9 @@ const Reports = () => {
       toast.error('Select a workspace to export reports.');
       return;
     }
+    // dynamic import ExcelJS only when exporting
+    const ExcelJSModule = await import('exceljs');
+    const ExcelJS = ExcelJSModule.default || ExcelJSModule;
     const workbook = new ExcelJS.Workbook();
     const sheet = workbook.addWorksheet('Sales');
     sheet.columns = [

@@ -30,43 +30,48 @@ const Invoices = () => {
   const addLine = () => setLineItems((current) => [...current, { description: '', quantity: 1, price: 0 }]);
   const removeLine = (index) => setLineItems((current) => current.filter((_, idx) => idx !== index));
 
-  const generatePdf = () => {
-    const doc = new jsPDF();
-    doc.setFontSize(18);
-    doc.text('Hustle Studio Invoice', 14, 18);
+  const generatePdf = async () => {
+      // lazy-load jsPDF and autotable plugin
+      const jsPDFModule = await import('jspdf');
+      const JsPDF = jsPDFModule.default || jsPDFModule;
+      await import('jspdf-autotable');
 
-    doc.setFontSize(12);
-    doc.text(`Client: ${client.name}`, 14, 30);
-    doc.text(`Email: ${client.contact}`, 14, 36);
-    doc.text(`Address: ${client.address}`, 14, 42);
+      const doc = new JsPDF();
+      doc.setFontSize(18);
+      doc.text('Hustle Studio Invoice', 14, 18);
 
-    doc.autoTable({
-      startY: 50,
-      head: [['Description', 'Qty', 'Price', 'Line Total']],
-      body: lineItems.map((item) => [
-        item.description,
-        item.quantity,
-        `R${Number(item.price).toFixed(2)}`,
-        `R${(Number(item.quantity) * Number(item.price)).toFixed(2)}`,
-      ]),
-    });
+      doc.setFontSize(12);
+      doc.text(`Client: ${client.name}`, 14, 30);
+      doc.text(`Email: ${client.contact}`, 14, 36);
+      doc.text(`Address: ${client.address}`, 14, 42);
 
-    const totalsY = doc.lastAutoTable.finalY + 10;
-    doc.text(`Subtotal: R${totals.subtotal.toFixed(2)}`, 14, totalsY);
-    doc.text(`VAT (15%): R${totals.vat.toFixed(2)}`, 14, totalsY + 6);
-    doc.text(`Total Due: R${totals.total.toFixed(2)}`, 14, totalsY + 12);
+      doc.autoTable({
+        startY: 50,
+        head: [['Description', 'Qty', 'Price', 'Line Total']],
+        body: lineItems.map((item) => [
+          item.description,
+          item.quantity,
+          `R${Number(item.price).toFixed(2)}`,
+          `R${(Number(item.quantity) * Number(item.price)).toFixed(2)}`,
+        ]),
+      });
 
-    doc.text(`Notes: ${notes}`, 14, totalsY + 24);
-    doc.save(`invoice-${client.name.replace(/\s+/g, '-').toLowerCase()}.pdf`);
+      const totalsY = doc.lastAutoTable.finalY + 10;
+      doc.text(`Subtotal: R${totals.subtotal.toFixed(2)}`, 14, totalsY);
+      doc.text(`VAT (15%): R${totals.vat.toFixed(2)}`, 14, totalsY + 6);
+      doc.text(`Total Due: R${totals.total.toFixed(2)}`, 14, totalsY + 12);
 
-    const dueDate = new Date();
-    dueDate.setDate(dueDate.getDate() + 7);
-    notify({
-      title: 'Invoice scheduled',
-      description: `${client.name} — follow up by ${dueDate.toLocaleDateString()}.`,
-      type: 'info',
-    });
-  };
+      doc.text(`Notes: ${notes}`, 14, totalsY + 24);
+      doc.save(`invoice-${client.name.replace(/\s+/g, '-').toLowerCase()}.pdf`);
+
+      const dueDate = new Date();
+      dueDate.setDate(dueDate.getDate() + 7);
+      notify({
+        title: 'Invoice scheduled',
+        description: `${client.name} — follow up by ${dueDate.toLocaleDateString()}.`,
+        type: 'info',
+      });
+    };
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-[#0e0e18] to-[#1b1830] px-4 pb-16 text-white sm:px-8">
