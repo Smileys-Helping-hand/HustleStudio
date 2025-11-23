@@ -42,7 +42,9 @@ const DiagnosticsOverlay = () => {
     <div className="fixed bottom-6 right-6 z-50 w-64 rounded-2xl border border-white/20 bg-black/70 p-4 text-xs text-white/80 shadow-xl backdrop-blur">
       <p className="font-semibold uppercase tracking-[0.35em] text-white/60">Diagnostics</p>
       <div className="mt-3 space-y-1">
-        <p>FPS: <span className="font-mono">{fps}</span></p>
+        <p>
+          FPS: <span className="font-mono">{fps}</span>
+        </p>
         {memoryUsage ? (
           <p>
             Memory: <span className="font-mono">{(memoryUsage.used / 1048576).toFixed(1)}</span> /{' '}
@@ -52,7 +54,9 @@ const DiagnosticsOverlay = () => {
           <p>Memory: unavailable</p>
         )}
       </div>
-      <p className="mt-3 text-[0.65rem] uppercase tracking-[0.4em] text-white/40">Toggle with F12</p>
+      <p className="mt-3 text-[0.65rem] uppercase tracking-[0.4em] text-white/40">
+        Toggle with F12
+      </p>
     </div>
   );
 };

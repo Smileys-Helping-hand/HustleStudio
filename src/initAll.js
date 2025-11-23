@@ -1,5 +1,6 @@
 /* eslint-env node */
 import app, { db } from './lib/firebase.js';
+import { logEvent as logTelemetryEvent } from './lib/telemetryEngine.js';
 import {
   createUserWithEmailAndPassword,
   getAuth,
@@ -47,6 +48,17 @@ async function seedAuthAndFirestore() {
       }),
     ]);
 
+    await Promise.all([
+      setDoc(doc(db, 'users', adminUid, 'credits', 'balance'), {
+        balance: 250,
+        updatedAt: serverTimestamp(),
+      }),
+      setDoc(doc(db, 'users', staffUid, 'credits', 'balance'), {
+        balance: 150,
+        updatedAt: serverTimestamp(),
+      }),
+    ]);
+
     const inventoryCollection = collection(db, 'inventory');
     await Promise.all([
       setDoc(doc(inventoryCollection, 'Hookah Pipe'), {
@@ -81,6 +93,62 @@ async function seedAuthAndFirestore() {
       notes: 'Daily summary auto-generated',
     });
 
+    const salesCollection = collection(db, 'sales');
+    await Promise.all([
+      setDoc(doc(salesCollection, 'sale-001'), {
+        items: [
+          { id: 'Hookah Pipe', name: 'Hookah Pipe', price: 149.99, quantity: 1 },
+          { id: 'Charcoal Pack', name: 'Charcoal Pack', price: 19.99, quantity: 2 },
+        ],
+        totals: { subtotal: 189.97, vat: 28.50, total: 218.47 },
+        paymentType: 'Card',
+        discount: 0,
+        createdAt: serverTimestamp(),
+      }),
+      setDoc(doc(salesCollection, 'sale-002'), {
+        items: [
+          { id: 'Mouth Tips', name: 'Mouth Tips', price: 9.99, quantity: 5 },
+        ],
+        totals: { subtotal: 49.95, vat: 7.49, total: 57.44 },
+        paymentType: 'Cash',
+        discount: 5,
+        createdAt: serverTimestamp(),
+      }),
+    ]);
+
+    const teamLogsCollection = collection(db, 'teamLogs');
+    await Promise.all([
+      setDoc(doc(teamLogsCollection, 'log-001'), {
+        message: 'Admin approved new stock delivery',
+        createdAt: serverTimestamp(),
+        actor: 'admin@studio.com',
+      }),
+      setDoc(doc(teamLogsCollection, 'log-002'), {
+        message: 'Staff processed walk-in sale',
+        createdAt: serverTimestamp(),
+        actor: 'staff@studio.com',
+      }),
+    ]);
+
+    await Promise.all([
+      setDoc(doc(db, 'users', adminUid, 'usageLogs', 'seed-usage'), {
+        userId: adminUid,
+        assistant: 'strategy',
+        tokensUsed: 1200,
+        creditsUsed: 12,
+        model: 'gpt-4o',
+        createdAt: serverTimestamp(),
+      }),
+      setDoc(doc(db, 'aiUsageLogs', 'seed-global'), {
+        userId: adminUid,
+        assistant: 'strategy',
+        tokensUsed: 1200,
+        creditsUsed: 12,
+        model: 'gpt-4o',
+        createdAt: serverTimestamp(),
+      }),
+    ]);
+
     await signOut(auth);
     process.stdout.write('🎉 Firestore seeded & signed out successfully!\n');
   } catch (error) {
@@ -90,3 +158,14 @@ async function seedAuthAndFirestore() {
 }
 
 seedAuthAndFirestore();
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('error', (event) => {
+    logTelemetryEvent('system', 'anon', 'client_error', {
+      message: event.message,
+      filename: event.filename,
+      lineno: event.lineno,
+      colno: event.colno,
+    });
+  });
+}

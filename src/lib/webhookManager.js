@@ -1,80 +1,46 @@
-/* global process */
+import { addDoc, collection, getDocs, query, where } from 'firebase/firestore';
+import { getServerFirestore } from './serverFirebase.js';
+import { recordTelemetry } from './telemetry.js';
 
-function resolveEnv(key) {
-  if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env[key]) {
-    return import.meta.env[key];
-  }
-  if (typeof process !== 'undefined' && process.env && process.env[key]) {
-    return process.env[key];
-  }
-  return undefined;
-}
-
-function normalizeWebhookList(value) {
-  if (!value) return [];
-  if (Array.isArray(value)) return value.filter(Boolean);
-  return value
-    .split(',')
-    .map((item) => item.trim())
-    .filter(Boolean);
-}
-
-async function postWebhook(url, payload, { signal } = {}) {
-  if (!url) {
-    return { skipped: true };
-  }
-
+const fetchJSON = async (url, options) => {
   const response = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-    signal,
+    headers: { 'Content-Type': 'application/json', ...(options?.headers ?? {}) },
+    ...options,
   });
+  return { ok: response.ok, status: response.status, body: await response.text() };
+};
 
-  return {
-    ok: response.ok,
-    status: response.status,
-    statusText: response.statusText,
-  };
-}
+export const registerWebhook = async (tenantId, hook) => {
+  const db = getServerFirestore();
+  const ref = collection(db, `tenants/${tenantId}/webhooks`);
+  await addDoc(ref, hook);
+  await recordTelemetry('webhook.registered', tenantId, { provider: hook.provider });
+};
 
-export async function sendDigestNotification(summary, options = {}) {
-  const endpoints = normalizeWebhookList(resolveEnv('VITE_STATUS_WEBHOOK_URLS'));
-  if (endpoints.length === 0) {
-    if (typeof console !== 'undefined' && console.error) {
-      console.error('[WebhookManager] No webhook URLs configured, skipping digest dispatch.');
+const loadHooks = async (tenantId, provider) => {
+  const db = getServerFirestore();
+  const base = collection(db, `tenants/${tenantId}/webhooks`);
+  const constraints = provider ? [where('provider', '==', provider)] : [];
+  const snapshot = await getDocs(constraints.length ? query(base, ...constraints) : base);
+  return snapshot.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }));
+};
+
+export const triggerHook = async (event, data, tenantId, { provider } = {}) => {
+  const hooks = await loadHooks(tenantId, provider);
+  const deliveries = [];
+  for (const hook of hooks) {
+    if (hook.events && !hook.events.includes(event)) continue;
+    try {
+      const result = await fetchJSON(hook.url, {
+        method: 'POST',
+        body: JSON.stringify({ event, data, tenantId, ts: new Date().toISOString() }),
+        headers: hook.secret ? { 'x-hustle-signature': hook.secret } : undefined,
+      });
+      deliveries.push({ id: hook.id, ok: result.ok, status: result.status });
+    } catch (error) {
+      deliveries.push({ id: hook.id, ok: false, error: error.message });
     }
-    return [];
   }
-
-  const payload = {
-    type: 'hustleStudioDigest',
-    generatedAt: new Date().toISOString(),
-    summary,
-  };
-
-  return Promise.all(endpoints.map((endpoint) => postWebhook(endpoint, payload, options)));
-}
-
-export async function sendAlert(message, options = {}) {
-  const endpoints = normalizeWebhookList(resolveEnv('VITE_STATUS_WEBHOOK_URLS'));
-  if (endpoints.length === 0) {
-    if (typeof console !== 'undefined' && console.error) {
-      console.error('[WebhookManager] Alert requested but no webhook URLs configured.');
-    }
-    return [];
-  }
-
-  const payload = {
-    type: 'hustleStudioAlert',
-    generatedAt: new Date().toISOString(),
-    message,
-  };
-
-  return Promise.all(endpoints.map((endpoint) => postWebhook(endpoint, payload, options)));
-}
-
-export default {
-  sendDigestNotification,
-  sendAlert,
+  await recordTelemetry('webhook.trigger', tenantId, { event, count: deliveries.length, provider });
+  return deliveries;
 };

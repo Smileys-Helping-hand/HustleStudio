@@ -1,5 +1,5 @@
 export const mockInventory = [
-  { id: 'Hookah Pipe', quantity: 12, price: 1199 },
-  { id: 'Charcoal Pack', quantity: 26, price: 149 },
-  { id: 'Mouth Tips', quantity: 80, price: 35 },
+  { id: 'Hookah Pipe', name: 'Hookah Pipe', quantity: 12, price: 149.99 },
+  { id: 'Charcoal Pack', name: 'Charcoal Pack', quantity: 26, price: 19.99 },
+  { id: 'Mouth Tips', name: 'Mouth Tips', quantity: 80, price: 9.99 },
 ];

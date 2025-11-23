@@ -1,16 +1,38 @@
-node_modules
-.DS_Store
+# Hustle Studio GitIgnore
+node_modules/
+dist/
+build/
+reports/
+VERSION.txt
 .env
 npm-debug.log*
-.vite
-.idea
-dist
-reports
-VERSION.txt
+.vite/
+.idea/
+.tmp/
+.tmp*/
+.DS_Store
+.cache/
+tmp/
+amplify/
+.firebase/
 
-# Media assets hosted externally
-public/assets/media/
-public/assets/backgrounds/
-public/assets/patterns/
-public/assets/icons/
-public/assets/logos/
+# Logs
+*.log
+
+# Ignore binary assets for Codex safety
+/public/assets/
+/public/videos/
+/public/media/
+/public/uploads/
+/public/diagrams/
+/assets/*.png
+/assets/*.jpg
+/assets/*.jpeg
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.svg
+*.mp4
+*.mov
+*.webm
