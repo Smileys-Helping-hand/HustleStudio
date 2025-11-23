@@ -17,7 +17,7 @@ const MetricCard = ({ title, value, trend }) => (
 MetricCard.propTypes = {
   title: PropTypes.string.isRequired,
   value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
-  trend: PropTypes.string.isRequired,
+  trend: PropTypes.oneOfType([PropTypes.string, PropTypes.node]).isRequired,
 };
 
 export default MetricCard;

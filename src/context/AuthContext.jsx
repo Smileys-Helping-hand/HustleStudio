@@ -4,7 +4,14 @@ import {
   signInWithEmailAndPassword,
   signOut as firebaseSignOut,
 } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import {
+  collectionGroup,
+  doc,
+  getDoc,
+  getDocs,
+  query,
+  where,
+} from 'firebase/firestore';
 import PropTypes from 'prop-types';
 import { auth, db } from '../lib/firebase';
 import { toast } from 'react-hot-toast';
@@ -12,17 +19,20 @@ import { toast } from 'react-hot-toast';
 const AuthContext = createContext({
   user: null,
   role: null,
+  memberships: [],
   loading: true,
   offlineMode: false,
   login: async () => {},
   signOut: async () => {},
   reportOffline: () => {},
+  refreshMemberships: async () => {},
 });
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [role, setRole] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [memberships, setMemberships] = useState([]);
   const [offlineMode, setOfflineMode] = useState(false);
 
   const reportOffline = useCallback(() => {
@@ -30,20 +40,53 @@ export const AuthProvider = ({ children }) => {
     setOfflineMode(true);
   }, []);
 
+  const loadMemberships = useCallback(
+    async (uid) => {
+      if (!uid) {
+        setMemberships([]);
+        return [];
+      }
+      try {
+        const membershipsQuery = query(
+          collectionGroup(db, 'users'),
+          where('uid', '==', uid)
+        );
+        const snapshot = await getDocs(membershipsQuery);
+        const mapped = snapshot.docs.map((docSnapshot) => ({
+          tenantId: docSnapshot.ref.parent.parent?.id ?? docSnapshot.data().tenantId ?? 'default',
+          role: docSnapshot.data().role ?? 'viewer',
+          ...docSnapshot.data(),
+        }));
+        setMemberships(mapped);
+        return mapped;
+      } catch (error) {
+        console.error('[Firestore] Failed to load tenant memberships.', error);
+        setMemberships([]);
+        return [];
+      }
+    },
+    []
+  );
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      console.info('[AuthState] Auth change detected.', firebaseUser ? firebaseUser.uid : 'signed out');
+      console.info(
+        '[AuthState] Auth change detected.',
+        firebaseUser ? firebaseUser.uid : 'signed out'
+      );
       if (!firebaseUser) {
         setUser(null);
         setRole(null);
+        setMemberships([]);
         setLoading(false);
         return;
       }
 
       try {
         const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+        await loadMemberships(firebaseUser.uid);
         setUser(firebaseUser);
-        setRole(userDoc.exists() ? userDoc.data().role ?? 'staff' : 'staff');
+        setRole(userDoc.exists() ? (userDoc.data().role ?? 'staff') : 'staff');
         setOfflineMode(false);
       } catch (error) {
         console.error('[Firestore] Failed to load user profile.', error);
@@ -57,7 +100,7 @@ export const AuthProvider = ({ children }) => {
     });
 
     return () => unsubscribe();
-  }, [reportOffline]);
+  }, [loadMemberships, reportOffline]);
 
   const login = useCallback(
     async (email, password) => {
@@ -67,7 +110,8 @@ export const AuthProvider = ({ children }) => {
         console.info('[AuthState] Login successful.', credentials.user.uid);
         try {
           const profile = await getDoc(doc(db, 'users', credentials.user.uid));
-          setRole(profile.exists() ? profile.data().role ?? 'staff' : 'staff');
+          await loadMemberships(credentials.user.uid);
+          setRole(profile.exists() ? (profile.data().role ?? 'staff') : 'staff');
           setOfflineMode(false);
         } catch (profileError) {
           console.error('[Firestore] Unable to load profile after login.', profileError);
@@ -89,7 +133,7 @@ export const AuthProvider = ({ children }) => {
         setLoading(false);
       }
     },
-    [reportOffline]
+    [loadMemberships, reportOffline]
   );
 
   const signOut = useCallback(async () => {
@@ -98,6 +142,7 @@ export const AuthProvider = ({ children }) => {
       console.info('[AuthState] User signed out.');
       setUser(null);
       setRole(null);
+      setMemberships([]);
     } catch (error) {
       console.error('[AuthState] Sign-out error.', error);
       toast.error('Unable to sign out');
@@ -109,13 +154,25 @@ export const AuthProvider = ({ children }) => {
     () => ({
       user,
       role,
+      memberships,
       loading,
       offlineMode,
       login,
       signOut,
       reportOffline,
+      refreshMemberships: loadMemberships,
     }),
-    [user, role, loading, offlineMode, reportOffline, login, signOut]
+    [
+      user,
+      role,
+      memberships,
+      loading,
+      offlineMode,
+      reportOffline,
+      login,
+      signOut,
+      loadMemberships,
+    ]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

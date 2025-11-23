@@ -1,18 +1,24 @@
 import { useEffect, useState } from 'react';
-import { collection, getDocs } from 'firebase/firestore';
+import { getDocs } from 'firebase/firestore';
 import { motion } from 'framer-motion';
-import { db } from '../lib/firebase';
 import { mockTeam } from '../mockData/team.js';
 import { useAuth } from '../context/AuthContext.jsx';
+import { useTenant } from '../context/TenantContext.jsx';
+import { tenantCollection } from '../lib/tenant.js';
 
 const Team = () => {
   const { reportOffline } = useAuth();
+  const { activeTenantId } = useTenant();
   const [members, setMembers] = useState(mockTeam);
 
   useEffect(() => {
     const fetchMembers = async () => {
       try {
-        const snapshot = await getDocs(collection(db, 'users'));
+        if (!activeTenantId) {
+          setMembers(mockTeam);
+          return;
+        }
+        const snapshot = await getDocs(tenantCollection(activeTenantId, 'users'));
         setMembers(
           snapshot.docs.map((docSnapshot) => ({ id: docSnapshot.id, ...docSnapshot.data() }))
         );
@@ -24,13 +30,15 @@ const Team = () => {
     };
 
     fetchMembers();
-  }, [reportOffline]);
+  }, [activeTenantId, reportOffline]);
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-semibold text-white">Studio crew</h1>
-        <p className="text-white/60">Authenticated teammates with offline fallbacks for role lookups.</p>
+        <p className="text-white/60">
+          Authenticated teammates with offline fallbacks for role lookups.
+        </p>
       </div>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {members.length === 0 ? (

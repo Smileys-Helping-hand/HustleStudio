@@ -1,109 +1,97 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { themes } from './themes.js';
 import { useAuth } from '../context/AuthContext.jsx';
+import { useTenant } from '../context/TenantContext.jsx';
 import { db } from '../lib/firebase';
-import { themes, themeOrder } from './themes.js';
 
-const STORAGE_KEY = 'hustle-studio-theme';
-const INTRO_STORAGE_KEY = 'hustle-studio-intro';
+const STORAGE_KEY = 'hs-theme';
+const themeKeys = Object.keys(themes);
 
 const ThemeContext = createContext({
-  themeKey: 'noctisGold',
-  theme: themes.noctisGold,
-  showIntroOnStartup: true,
-  introMedia: null,
-  cycleTheme: () => {},
+  themeKey: 'dark',
+  theme: themes.dark,
   setTheme: () => {},
-  setShowIntroOnStartup: () => {},
-  setIntroMedia: () => {},
+  cycleTheme: () => {},
 });
 
 const applyThemeToDocument = (theme) => {
+  if (typeof document === 'undefined') return;
   const root = document.documentElement;
-  root.style.setProperty('--theme-background', theme.palette.background);
-  root.style.setProperty('--theme-surface', theme.palette.surface);
-  root.style.setProperty('--theme-accent', theme.palette.accent);
-  root.style.setProperty('--theme-accent-soft', theme.palette.accentSoft);
-  root.style.setProperty('--theme-highlight', theme.palette.highlight);
-  root.style.setProperty('--theme-text', theme.palette.text);
-  document.body.style.backgroundColor = theme.palette.background;
+  root.style.setProperty('--theme-background', theme.background);
+  root.style.setProperty('--theme-surface', theme.surface);
+  root.style.setProperty('--theme-text', theme.text);
+  root.style.setProperty('--theme-accent', theme.accent);
+  root.style.setProperty('--theme-secondary', theme.secondary);
+  root.style.setProperty('--theme-highlight', theme.secondary);
+  document.body.style.backgroundColor = theme.background;
+
   const metaTheme = document.querySelector('meta[name="theme-color"]');
   if (metaTheme) {
-    metaTheme.setAttribute('content', theme.meta.themeColor);
+    metaTheme.setAttribute('content', theme.background);
   } else {
-    const newMeta = document.createElement('meta');
-    newMeta.name = 'theme-color';
-    newMeta.content = theme.meta.themeColor;
-    document.head.appendChild(newMeta);
+    const meta = document.createElement('meta');
+    meta.name = 'theme-color';
+    meta.content = theme.background;
+    document.head.appendChild(meta);
   }
 };
 
 export const ThemeProvider = ({ children }) => {
   const { user, reportOffline } = useAuth();
-  const [themeKey, setThemeKey] = useState('noctisGold');
-  const [showIntroOnStartup, setShowIntroOnStartup] = useState(true);
-  const [introMedia, setIntroMedia] = useState({});
-  const initialisedRef = useRef(false);
+  const [themeKey, setThemeKey] = useState('dark');
+  const { brand } = useTenant();
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const storedTheme = window.localStorage.getItem(STORAGE_KEY);
-    const storedIntro = window.localStorage.getItem(INTRO_STORAGE_KEY);
-    if (storedTheme && themes[storedTheme]) {
-      setThemeKey(storedTheme);
+    const stored = window.localStorage.getItem(STORAGE_KEY);
+    if (stored && themes[stored]) {
+      setThemeKey(stored);
     }
-    if (storedIntro !== null) {
-      setShowIntroOnStartup(storedIntro === 'true');
-    }
-    initialisedRef.current = true;
   }, []);
 
   useEffect(() => {
     if (!user) return;
     let active = true;
-    const load = async () => {
+    const fetchSettings = async () => {
       try {
-        const snapshot = await getDoc(doc(db, 'userSettings', user.uid));
+        const ref = doc(db, 'userSettings', user.uid);
+        const snapshot = await getDoc(ref);
         if (!active) return;
         if (snapshot.exists()) {
           const data = snapshot.data();
           if (data.theme && themes[data.theme]) {
             setThemeKey(data.theme);
           }
-          if (typeof data.showIntroOnStartup === 'boolean') {
-            setShowIntroOnStartup(data.showIntroOnStartup);
-          }
-          if (data.introMedia) {
-            setIntroMedia(data.introMedia);
-          } else {
-            setIntroMedia({});
-          }
-        } else {
-          setIntroMedia({});
         }
       } catch (error) {
-        console.error('[Firestore] Failed to load user settings.', error);
+        console.error('[Firestore] Failed to load theme preference.', error);
         reportOffline();
       }
     };
-    load();
+    fetchSettings();
     return () => {
       active = false;
     };
   }, [user, reportOffline]);
 
   useEffect(() => {
-    if (!initialisedRef.current || typeof window === 'undefined') return;
-    const theme = themes[themeKey] ?? themes.noctisGold;
+    const theme = themes[themeKey] ?? themes.dark;
     applyThemeToDocument(theme);
-    window.localStorage.setItem(STORAGE_KEY, theme.key);
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(STORAGE_KEY, themeKey);
+    }
   }, [themeKey]);
 
   useEffect(() => {
-    if (!initialisedRef.current || typeof window === 'undefined') return;
-    window.localStorage.setItem(INTRO_STORAGE_KEY, String(showIntroOnStartup));
-  }, [showIntroOnStartup]);
+    if (typeof document === 'undefined' || !brand) return;
+    const root = document.documentElement;
+    root.style.setProperty('--brand-primary', brand.colors?.primary ?? '#6366f1');
+    root.style.setProperty('--brand-accent', brand.colors?.accent ?? '#8b5cf6');
+    root.style.setProperty('--brand-surface', brand.colors?.surface ?? '#0f0f17');
+    root.style.setProperty('--brand-text', brand.colors?.text ?? '#f5f5f5');
+  }, [brand]);
 
   useEffect(() => {
     if (!user) return;
@@ -113,41 +101,34 @@ export const ThemeProvider = ({ children }) => {
           doc(db, 'userSettings', user.uid),
           {
             theme: themeKey,
-            showIntroOnStartup,
-            introMedia: introMedia && Object.keys(introMedia).length ? introMedia : null,
             updatedAt: new Date().toISOString(),
           },
           { merge: true }
         );
-        console.info('[Firestore] User settings updated.');
       } catch (error) {
-        console.error('[Firestore] Failed to persist user settings.', error);
+        console.error('[Firestore] Unable to persist theme preference.', error);
         reportOffline();
       }
     };
     persist();
-  }, [user, themeKey, showIntroOnStartup, introMedia, reportOffline]);
+  }, [user, themeKey, reportOffline]);
 
   const cycleTheme = useCallback(() => {
     setThemeKey((current) => {
-      const index = themeOrder.indexOf(current);
-      const nextIndex = (index + 1) % themeOrder.length;
-      return themeOrder[nextIndex];
+      const index = themeKeys.indexOf(current);
+      const nextIndex = (index + 1) % themeKeys.length;
+      return themeKeys[nextIndex];
     });
   }, []);
 
   const value = useMemo(
     () => ({
       themeKey,
-      theme: themes[themeKey] ?? themes.noctisGold,
-      showIntroOnStartup,
-      introMedia,
+      theme: themes[themeKey] ?? themes.dark,
       setTheme: setThemeKey,
-      setShowIntroOnStartup,
-      setIntroMedia,
       cycleTheme,
     }),
-    [themeKey, showIntroOnStartup, introMedia, cycleTheme]
+    [themeKey, cycleTheme]
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;

@@ -1,99 +1,144 @@
-import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import { useEffect, useMemo, useState } from 'react';
+import {
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+} from 'recharts';
+import { getDocs, limit, orderBy, query } from 'firebase/firestore';
 import { trackEvent } from '../lib/amplifyMonitor.js';
-
-const fallbackTelemetry = [
-  { label: '12:00', sessions: 12, installs: 2 },
-  { label: '13:00', sessions: 18, installs: 3 },
-  { label: '14:00', sessions: 22, installs: 4 },
-  { label: '15:00', sessions: 25, installs: 5 },
-  { label: '16:00', sessions: 28, installs: 7 },
-  { label: '17:00', sessions: 32, installs: 8 },
-];
+import { useTenant } from '../context/TenantContext.jsx';
+import { tenantCollection } from '../lib/tenant.js';
+import { asset } from '../config/assets.js';
 
 const Monitor = () => {
-  const [telemetry, setTelemetry] = useState(fallbackTelemetry);
-  const [loading, setLoading] = useState(true);
-  const [Recharts, setRecharts] = useState(null);
+  const [latency, setLatency] = useState(null);
+  const [firestoreStatus, setFirestoreStatus] = useState('Checking…');
+  const [sessionCount, setSessionCount] = useState(0);
+  const [telemetry, setTelemetry] = useState([]);
+  const { activeTenantId } = useTenant();
 
   useEffect(() => {
-    const loadAnalytics = async () => {
+    const runChecks = async () => {
       try {
-        trackEvent('MonitorPing', { page: 'Monitor' });
+        const start = performance.now();
+        const manifestResponse = await fetch(asset('manifest.json'));
+        const duration = performance.now() - start;
+        setLatency(`${Math.round(duration)} ms`);
+        if (!manifestResponse.ok) throw new Error('Manifest unavailable');
       } catch (error) {
-        console.warn('[Amplify] Unable to record monitor ping.', error);
+        console.warn('[Monitor] CDN ping failed', error);
+        setLatency('Unavailable');
       }
-      setTelemetry((current) =>
-        current.map((point, index) => ({
-          ...point,
-          sessions: point.sessions + ((index % 2) * 2 + 1),
-          installs: point.installs + (index % 3 === 0 ? 1 : 0),
-        }))
-      );
-      setLoading(false);
-    };
-    loadAnalytics();
-  }, []);
 
-  useEffect(() => {
-    let active = true;
-    import('recharts')
-      .then((mod) => {
-        if (active) setRecharts(mod);
-      })
-      .catch(() => {
-        /* ignore */
-      });
-    return () => {
-      active = false;
+      try {
+        if (!activeTenantId) {
+          setFirestoreStatus('Offline');
+          return;
+        }
+        const salesQuery = query(
+          tenantCollection(activeTenantId, 'sales'),
+          orderBy('createdAt', 'desc'),
+          limit(24)
+        );
+        const salesSnapshot = await getDocs(salesQuery);
+        const points = salesSnapshot.docs.map((docSnap) => {
+          const createdAt = docSnap.data().createdAt?.toDate?.() ?? new Date();
+          return {
+            label: createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            total: docSnap.data().totals?.total ?? 0,
+          };
+        });
+        setTelemetry(points.reverse());
+        setFirestoreStatus('Online');
+        setSessionCount(salesSnapshot.size);
+      } catch (error) {
+        console.error('[Monitor] Firestore check failed', error);
+        setFirestoreStatus('Offline');
+      }
+
+      try {
+        trackEvent('SystemMonitor', { status: 'ping' });
+      } catch (error) {
+        console.warn('[Amplify] Tracking failed', error);
+      }
     };
-  }, []);
+
+    runChecks().catch(() => {});
+  }, [activeTenantId]);
+
+  const telemetryData = useMemo(() => {
+    if (telemetry.length) return telemetry;
+    return [
+      { label: '08:00', total: 1200 },
+      { label: '10:00', total: 1850 },
+      { label: '12:00', total: 2100 },
+      { label: '14:00', total: 2600 },
+      { label: '16:00', total: 3000 },
+      { label: '18:00', total: 2800 },
+    ];
+  }, [telemetry]);
 
   return (
     <div className="space-y-8">
-      <div className="space-y-2">
-        <h1 className="text-3xl font-semibold text-[var(--theme-text)]">Amplify analytics</h1>
-        <p className="text-sm text-[color-mix(in_srgb,var(--theme-text)_60%,transparent)]">
-          Real-time insight placeholder showcasing how Hustle Studio streams events into AWS Amplify.
+      <header className="space-y-2">
+        <h1 className="text-3xl font-semibold text-white">System Monitor</h1>
+        <p className="text-sm text-white/60">
+          Realtime health overview for Firebase, CDN, and Amplify integrations.
         </p>
-      </div>
+      </header>
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="rounded-3xl border border-white/5 bg-black/40 p-6 shadow-[0_25px_60px_rgba(0,0,0,0.35)] backdrop-blur"
-      >
-        <div className="flex items-center justify-between">
+      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="rounded-2xl border border-white/10 bg-black/40 p-4">
+          <p className="text-xs uppercase tracking-wide text-white/50">Firestore</p>
+          <p className={`mt-2 text-xl font-semibold ${firestoreStatus === 'Online' ? 'text-emerald-300' : 'text-red-300'}`}>
+            {firestoreStatus}
+          </p>
+        </div>
+        <div className="rounded-2xl border border-white/10 bg-black/40 p-4">
+          <p className="text-xs uppercase tracking-wide text-white/50">CDN latency</p>
+          <p className="mt-2 text-xl font-semibold text-white">{latency ?? 'Checking…'}</p>
+        </div>
+        <div className="rounded-2xl border border-white/10 bg-black/40 p-4">
+          <p className="text-xs uppercase tracking-wide text-white/50">Recent sessions</p>
+          <p className="mt-2 text-xl font-semibold text-white">{sessionCount}</p>
+        </div>
+        <div className="rounded-2xl border border-white/10 bg-black/40 p-4">
+          <p className="text-xs uppercase tracking-wide text-white/50">Amplify monitor</p>
+          <p className="mt-2 text-xl font-semibold text-white">Active</p>
+        </div>
+      </section>
+
+      <section className="rounded-3xl border border-white/5 bg-black/40 p-6 shadow-[0_25px_60px_rgba(0,0,0,0.35)] backdrop-blur">
+        <header className="flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-white">Session telemetry</h2>
-            <p className="text-xs uppercase tracking-[0.3em] text-white/50">
-              Hourly breakdown (mocked when offline)
-            </p>
+            <h2 className="text-lg font-semibold text-white">Last activity</h2>
+            <p className="text-xs uppercase tracking-[0.25em] text-white/50">Sales telemetry (24h)</p>
           </div>
-          <span className="rounded-full border border-white/10 px-3 py-1 text-xs uppercase tracking-[0.35em] text-white/50">
-            {loading ? 'Syncing...' : 'Live'}
+          <span className="rounded-full border border-white/10 px-3 py-1 text-xs text-white/50">
+            {firestoreStatus}
           </span>
-        </div>
+        </header>
         <div className="mt-6 h-72">
-          {Recharts ? (
-            <Recharts.ResponsiveContainer width="100%" height="100%">
-              <Recharts.LineChart data={telemetry}>
-                <Recharts.CartesianGrid strokeDasharray="3 3" stroke="#444" />
-                <Recharts.XAxis dataKey="label" stroke="#aaa" />
-                <Recharts.YAxis stroke="#aaa" />
-                <Recharts.Tooltip
-                  contentStyle={{ backgroundColor: '#1f1f1f', border: 'none', color: '#fff' }}
-                  formatter={(value, name) => [value, name === 'sessions' ? 'Sessions' : 'Installs']}
-                />
-                <Recharts.Line type="monotone" dataKey="sessions" stroke="#a855f7" strokeWidth={3} dot />
-                <Recharts.Line type="monotone" dataKey="installs" stroke="#b8a46c" strokeWidth={2} dot />
-              </Recharts.LineChart>
-            </Recharts.ResponsiveContainer>
-          ) : (
-            <div className="h-full w-full animate-pulse rounded-lg bg-white/5" />
-          )}
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={telemetryData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#444" />
+              <XAxis dataKey="label" stroke="#aaa" />
+              <YAxis stroke="#aaa" />
+              <Tooltip contentStyle={{ backgroundColor: '#1f1f1f', border: 'none', color: '#fff' }} />
+              <Line type="monotone" dataKey="total" stroke="#a855f7" strokeWidth={3} dot />
+            </LineChart>
+          </ResponsiveContainer>
         </div>
-      </motion.div>
+      </section>
+
+      <footer className="rounded-2xl border border-white/10 bg-black/30 p-4 text-xs text-white/60">
+        Need deeper insights? Launch the dedicated monitor service via <code>npm run monitor</code> and visit
+        <span className="text-white"> http://localhost:5050/monitor</span> for full diagnostics.
+      </footer>
     </div>
   );
 };

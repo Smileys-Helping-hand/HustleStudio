@@ -17,13 +17,8 @@ export default defineConfig({
     minify: 'esbuild',
     rollupOptions: {
       output: {
-        // split large libraries into separate named chunks for better caching
         manualChunks: {
-          vendor: ['react', 'react-dom'],
-          firebase: ['firebase/app', 'firebase/auth', 'firebase/firestore'],
-          pdf: ['jspdf', 'jspdf-autotable'],
-          filesaver: ['file-saver'],
-          html2canvas: ['html2canvas'],
+          vendor: ['react', 'react-dom', 'firebase/app', 'firebase/auth', 'firebase/firestore'],
         },
       },
     },
