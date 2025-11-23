@@ -6,14 +6,35 @@ on:
       - 'v*'
 
 jobs:
-  create_release:
-    name: Create Release
+  build_and_release:
+    name: Build and Create Release
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build production
+        run: npm run build --silent
+
+      - name: Archive dist
+        run: |
+          if [ -d dist ]; then
+            zip -r dist.zip dist
+            echo "dist.zip" > /tmp/dist_asset
+          else
+            echo "No dist directory found" >&2
+            exit 1
+          fi
 
       - name: Read release notes file
         id: notes
@@ -31,6 +52,7 @@ jobs:
           echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Create GitHub release
+        id: create_release
         uses: actions/create-release@v1
         with:
           tag_name: ${{ github.ref_name }}
@@ -40,3 +62,11 @@ jobs:
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload dist.zip to release
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: dist.zip
+          asset_name: dist-${{ github.ref_name }}.zip
+          asset_content_type: application/zip
