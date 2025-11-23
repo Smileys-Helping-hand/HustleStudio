@@ -1,5 +1,6 @@
 import { Suspense, lazy, useEffect, useState } from 'react';
 import { Navigate, Outlet, Route, Routes } from 'react-router-dom';
+import ErrorBoundary from './components/ErrorBoundary.jsx';
 import Navbar from './components/Navbar.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 import { useAuth } from './context/AuthContext.jsx';
@@ -49,8 +50,9 @@ const App = () => {
   return (
     <>
       <IntroGate onComplete={() => setIntroComplete(true)} />
-      <Suspense fallback={<SuspenseFallback />}>
-        <Routes>
+      <ErrorBoundary>
+        <Suspense fallback={<SuspenseFallback />}>
+          <Routes>
           <Route path="/login" element={user ? <Navigate to="/" replace /> : <Login />} />
           <Route element={<ProtectedRoute />}>
             <Route element={<ProtectedLayout />}>
@@ -68,7 +70,8 @@ const App = () => {
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-      </Suspense>
+        </Suspense>
+      </ErrorBoundary>
       {offlineMode && (
         <div className="fixed bottom-6 left-1/2 z-50 w-[90%] max-w-xl -translate-x-1/2 rounded-full border border-yellow-600/40 bg-yellow-500/10 px-6 py-3 text-center text-sm text-yellow-200 shadow-lg backdrop-blur">
           Offline Mode Activated — displaying cached workspace data.

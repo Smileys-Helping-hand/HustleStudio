@@ -22,11 +22,13 @@ export default function IntroGate({ onComplete }) {
     if (typeof window === 'undefined') return;
     const stored = window.localStorage.getItem(FIRST_LAUNCH_KEY) === 'true';
     setHasSeenIntro(stored);
-    if (!showIntroOnStartup && stored) {
+    // If the user has already seen the intro, respect that and skip it.
+    if (stored) {
       onComplete?.();
       return;
     }
-    setVisible(showIntroOnStartup || !stored);
+    // Otherwise, show the intro only if the theme setting enables it.
+    setVisible(showIntroOnStartup);
   }, [showIntroOnStartup, onComplete]);
 
   useEffect(() => {

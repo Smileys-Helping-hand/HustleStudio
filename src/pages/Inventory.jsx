@@ -30,14 +30,6 @@ const Inventory = () => {
     fetchInventory();
   }, [reportOffline]);
 
-  useEffect(() => {
-    const handleExport = () => {
-      exportToExcel();
-    };
-    document.addEventListener('dashboard-export-reports', handleExport);
-    return () => document.removeEventListener('dashboard-export-reports', handleExport);
-  }, [exportToExcel]);
-
   const lowStockItems = useMemo(() => items.filter((item) => (item.quantity ?? 0) < 10), [items]);
 
   const exportToExcel = useCallback(async () => {
@@ -57,7 +49,17 @@ const Inventory = () => {
     } catch (err) {
       console.error('[Export] Unable to create CSV', err);
     }
+
   }, [items]);
+
+  useEffect(() => {
+    const handleExport = () => {
+      exportToExcel();
+    };
+    document.addEventListener('dashboard-export-reports', handleExport);
+    return () => document.removeEventListener('dashboard-export-reports', handleExport);
+  }, [exportToExcel]);
+
 
   return (
     <div className="space-y-8">

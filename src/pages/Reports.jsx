@@ -30,12 +30,8 @@ export default function Reports() {
   }, [reportOffline]);
 
   useEffect(() => {
-    const handleShortcut = () => {
-      exportExcel();
-    };
-    document.addEventListener('dashboard-export-reports', handleShortcut);
-    return () => document.removeEventListener('dashboard-export-reports', handleShortcut);
-  }, [reports, exportExcel]);
+    // export functions must be defined before registering the event handler
+  }, [reports]);
 
   useEffect(() => {
     let active = true;
@@ -81,6 +77,15 @@ export default function Reports() {
       console.error('[Export] Unable to create CSV export', err);
     }
   }, [reports]);
+
+  useEffect(() => {
+    const handleShortcut = () => {
+      exportExcel();
+    };
+    document.addEventListener('dashboard-export-reports', handleShortcut);
+    return () => document.removeEventListener('dashboard-export-reports', handleShortcut);
+  }, [reports, exportExcel]);
+
 
   return (
     <div className="mx-auto max-w-5xl space-y-8 px-6 py-16">
