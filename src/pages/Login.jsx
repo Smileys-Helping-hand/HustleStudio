@@ -141,7 +141,11 @@ const Login = () => {
           </div>
           <motion.button
             whileTap={{ scale: 0.98 }}
-            type="submit"(isSignup ? 'Creating...' : 'Signing in...') : (isSignup ? 'Create Account' : 'Enter Studio')}
+            type="submit"
+            disabled={isLoading}
+            className="flex w-full items-center justify-center gap-2 rounded-full bg-[var(--theme-highlight)]/80 px-4 py-3 font-semibold uppercase tracking-[0.3em] text-white shadow-[0_18px_45px_rgba(184,164,108,0.25)] transition hover:bg-[var(--theme-highlight)] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isLoading ? (isSignup ? 'Creating...' : 'Signing in...') : (isSignup ? 'Create Account' : 'Enter Studio')}
           </motion.button>
         </form>
 
