@@ -4,6 +4,9 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { toast } from 'react-hot-toast';
 import { ASSETS } from '@/config/assets.js';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { auth, db } from '../lib/firebase';
+import { doc, setDoc } from 'firebase/firestore';
 
 const presets = [
   { email: 'admin@studio.com', label: 'Log in as Admin' },
@@ -16,9 +19,53 @@ const Login = () => {
   const [email, setEmail] = useState('admin@studio.com');
   const [password, setPassword] = useState('Admin123!');
   const [isLoading, setIsLoading] = useState(false);
+  const [isSignup, setIsSignup] = useState(false);
+
+  const handleSignup = async (event) => {
+    event.preventDefault();
+    try {
+      setIsLoading(true);
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+      
+      // Create default tenant for new user
+      const tenantId = `tenant_${user.uid}`;
+      await setDoc(doc(db, 'tenants', tenantId), {
+        name: 'My Studio',
+        ownerId: user.uid,
+        createdAt: new Date().toISOString(),
+        plan: 'free',
+      });
+
+      // Add user to tenant
+      await setDoc(doc(db, 'tenants', tenantId, 'users', user.uid), {
+        uid: user.uid,
+        email: user.email,
+        role: 'owner',
+        addedAt: new Date().toISOString(),
+      });
+
+      toast.success('Account created successfully!');
+      navigate('/', { replace: true });
+    } catch (error) {
+      console.error(error);
+      if (error.code === 'auth/email-already-in-use') {
+        toast.error('Email already in use');
+      } else if (error.code === 'auth/weak-password') {
+        toast.error('Password should be at least 6 characters');
+      } else {
+        toast.error('Failed to create account');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    if (isSignup) {
+      return handleSignup(event);
+    }
     try {
       setIsLoading(true);
       await login(email, password);
@@ -48,9 +95,13 @@ const Login = () => {
       >
         <div className="mb-8 text-center">
           <img src={ASSETS.logoMain} alt="Hustle Studio" className="mx-auto mb-4 h-14 w-14" />
-          <h1 className="text-2xl font-semibold text-white">Welcome to Hustle Studio</h1>
+          <h1 className="text-2xl font-semibold text-white">
+            {isSignup ? 'Create Your Studio' : 'Welcome to Hustle Studio'}
+          </h1>
           <p className="text-sm text-white/60">
-            Log in to resume your cinematic operations cockpit.
+            {isSignup
+              ? 'Sign up to start your cinematic operations cockpit.'
+              : 'Log in to resume your cinematic operations cockpit.'}
           </p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -90,27 +141,43 @@ const Login = () => {
           </div>
           <motion.button
             whileTap={{ scale: 0.98 }}
-            type="submit"
-            disabled={isLoading}
-            className="flex w-full items-center justify-center gap-2 rounded-full bg-[var(--theme-highlight)]/80 px-4 py-3 font-semibold uppercase tracking-[0.3em] text-white shadow-[0_18px_45px_rgba(184,164,108,0.25)] transition hover:bg-[var(--theme-highlight)] disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {isLoading ? 'Signing in...' : 'Enter Studio'}
+            type="submit"(isSignup ? 'Creating...' : 'Signing in...') : (isSignup ? 'Create Account' : 'Enter Studio')}
           </motion.button>
         </form>
 
-        <div className="mt-8 space-y-3">
-          <p className="text-xs font-semibold uppercase tracking-widest text-white/40">
-            Quick presets
-          </p>
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-            {presets.map((preset) => (
-              <button
-                key={preset.email}
-                type="button"
-                onClick={() => applyPreset(preset.email)}
-                className="rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/80 transition hover:border-brand-500/60 hover:text-white"
-              >
-                {preset.label}
+        <div className="mt-6 text-center">
+          <button
+            type="button"
+            onClick={() => {
+              setIsSignup(!isSignup);
+              setEmail('');
+              setPassword('');
+            }}
+            className="text-sm text-white/60 transition hover:text-white"
+          >
+            {isSignup ? 'Already have an account? Log in' : 'New to Hustle Studio? Create an account'}
+          </button>
+        </div>
+
+        {!isSignup && (
+          <div className="mt-8 space-y-3">
+            <p className="text-xs font-semibold uppercase tracking-widest text-white/40">
+              Quick presets
+            </p>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              {presets.map((preset) => (
+                <button
+                  key={preset.email}
+                  type="button"
+                  onClick={() => applyPreset(preset.email)}
+                  className="rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/80 transition hover:border-brand-500/60 hover:text-white"
+                >
+                  {preset.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}  {preset.label}
               </button>
             ))}
           </div>
