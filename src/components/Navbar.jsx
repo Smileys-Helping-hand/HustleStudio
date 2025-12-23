@@ -122,6 +122,14 @@ export default function Navbar() {
               </span>
             )}
           </button>
+          <button
+            type="button"
+            onClick={signOut}
+            className="sm:hidden flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs uppercase tracking-[0.35em] text-red-400/80 transition hover:border-red-400/50 hover:bg-red-500/10"
+            aria-label="Log out"
+          >
+            <FiLogOut className="text-base" />
+          </button>
           <div className="flex flex-1 items-center justify-center gap-3">
             <TenantSwitcher />
             <span className="flex items-center gap-3">
