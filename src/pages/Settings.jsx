@@ -76,7 +76,7 @@ export default function Settings() {
         role: 'Member',
         addedAt: serverTimestamp(),
       });
-      toast.success('Member invited');
+      toast.success('Member added');
       setNewMemberEmail('');
       loadMembers();
     } catch (error) {
@@ -233,14 +233,14 @@ export default function Settings() {
                 type="email"
                 value={newMemberEmail}
                 onChange={(e) => setNewMemberEmail(e.target.value)}
-                placeholder="Enter email to invite..."
+                placeholder="Enter email to add member..."
                 className="flex-1 rounded-lg border border-white/10 bg-white/5 px-4 py-2.5 text-white placeholder-white/40 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-400/20"
               />
               <button
                 type="submit"
                 className="rounded-lg bg-indigo-500 px-5 py-2.5 font-medium transition hover:bg-indigo-600"
               >
-                Invite
+                Add
               </button>
             </form>
 
