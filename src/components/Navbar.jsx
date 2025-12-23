@@ -65,7 +65,6 @@ export default function Navbar() {
       { to: '/inventory', icon: <FiBox />, label: 'Inventory', section: 'inventory' },
       { to: '/till', icon: <FiShoppingBag />, label: 'Till', section: 'till' },
       { to: '/tools', icon: <FiTool />, label: 'Tools', section: 'tools' },
-      { to: '/faults', icon: <FiCpu />, label: 'Fault Lookup', section: 'tools' },
       { to: '/reports', icon: <FiBarChart2 />, label: 'Reports', section: 'reports' },
       { to: '/visuals', icon: <FiImage />, label: 'Visuals', section: 'visuals' },
       { to: '/monitor', icon: <FiActivity />, label: 'Monitor', section: 'monitor' },
@@ -73,7 +72,6 @@ export default function Navbar() {
       { to: '/app-store', icon: <FiLayers />, label: 'App Store', section: 'marketplace' },
       { to: '/affiliates', icon: <FiTrendingUp />, label: 'Affiliates', section: 'affiliates' },
       { to: '/partners', icon: <FiBriefcase />, label: 'Partners', section: 'partners', matches: ['/partners'] },
-      { to: '/dashboards/custom', icon: <FiGrid />, label: 'Custom Dash', section: 'analytics' },
       { to: '/settings', icon: <FiSettings />, label: 'Settings', section: 'settings' },
     ];
 
@@ -100,7 +98,7 @@ export default function Navbar() {
   return (
     <>
       <nav className="sticky top-0 z-50 border-b border-white/10 bg-gradient-to-r from-[#1a1a1a]/95 via-[#16131f]/95 to-[#0d0d0d]/95 shadow-[0_10px_40px_rgba(12,10,30,0.6)] backdrop-blur">
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-4 sm:px-6">
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-5 px-6 py-5 sm:px-8">
         <div className="flex items-center justify-between gap-3">
           <button
             type="button"

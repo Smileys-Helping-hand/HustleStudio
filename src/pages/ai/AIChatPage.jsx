@@ -78,6 +78,7 @@ const AIChatPage = ({ assistantKey, title, systemPrompt, model }) => {
     setIsSending(true);
 
     try {
+      // Try real OpenAI API first
       let dynamicSystemMessage = systemMessage;
       if (['strategy', 'growth-coach'].includes(assistantKey)) {
         try {
@@ -125,8 +126,146 @@ const AIChatPage = ({ assistantKey, title, systemPrompt, model }) => {
       toast.success('Assistant response generated.');
     } catch (error) {
       console.error('[AIChat] error', error);
-      setMessages((prev) => prev.slice(0, -1));
-      toast.error(error.message || 'Unable to generate response.');
+      
+      // Fallback to demo mode if OpenAI API key is not configured
+      if (error.message?.includes('API key')) {
+        const demoResponses = {
+          'strategy': `📊 Strategic Analysis
+
+Based on your query, here are key strategic insights:
+
+**Current Position:**
+- Your workspace shows strong growth momentum
+- Market positioning is solid in your segment
+- Operational efficiency can be improved by 15-20%
+
+**Opportunities:**
+1. Expand into adjacent product categories
+2. Leverage AI tools to automate routine tasks
+3. Build strategic partnerships for market expansion
+
+**Recommended Actions:**
+- Short-term (30 days): Optimize inventory turnover
+- Medium-term (90 days): Launch customer referral program
+- Long-term (6 months): Explore new market segments
+
+**Risk Mitigation:**
+- Monitor competitor movements closely
+- Diversify supplier relationships
+- Build 3-month cash reserve
+
+*Note: This is a demo response. Configure OpenAI API key for real-time AI assistance.*`,
+          
+          'finance': `💰 Financial Intelligence
+
+**Revenue Analysis:**
+- Monthly recurring revenue: Strong upward trend
+- Average transaction value: $${Math.floor(Math.random() * 500 + 200)}
+- Customer lifetime value: Growing at 12% MoM
+
+**Cost Optimization:**
+- Current burn rate is sustainable
+- Opportunity to reduce operational costs by 8-10%
+- Recommend renegotiating supplier contracts
+
+**Cash Flow Projections:**
+- Next 30 days: Positive $${Math.floor(Math.random() * 10000 + 5000)}
+- Next 90 days: Projected $${Math.floor(Math.random() * 30000 + 15000)}
+- Runway: 14+ months at current burn rate
+
+**Recommendations:**
+1. Set aside 20% of revenue for growth investments
+2. Implement automated expense tracking
+3. Consider invoice factoring for better cash flow
+
+*Demo mode active. Add OpenAI API key for personalized analysis.*`,
+          
+          'inventory': `📦 Inventory Insights
+
+**Stock Status:**
+- Fast-moving items: 68% of SKUs
+- Slow-moving items: 22% of SKUs
+- Overstock risk: 10% of inventory value
+
+**Turnover Analysis:**
+- Average days to sell: 45 days
+- Best performers: Turning over every 21 days
+- Optimization potential: 15% efficiency gain
+
+**Recommendations:**
+1. Reorder top 20 SKUs within 7 days
+2. Run promotion on slow-moving inventory
+3. Implement just-in-time ordering for seasonal items
+
+**Predictive Alerts:**
+⚠️ 3 items approaching stockout
+✅ 12 items at optimal levels
+📊 Consider bundling strategies for slower SKUs
+
+*Demo response. Connect OpenAI for real-time inventory AI.*`,
+          
+          'assistant': `🤖 General Assistant
+
+I'm here to help! Here's what I can assist with:
+
+**Workspace Management:**
+- Setting up new projects and tasks
+- Managing team workflows
+- Organizing data and reports
+
+**Business Intelligence:**
+- Analyzing performance metrics
+- Identifying growth opportunities
+- Providing actionable recommendations
+
+**Automation Ideas:**
+- Streamline repetitive tasks
+- Set up notification workflows
+- Integrate with your existing tools
+
+**Quick Tips:**
+- Use the Projects page to track all initiatives
+- Check Insights weekly for data-driven decisions
+- Leverage the Invoice Generator for professional billing
+
+How can I help you today?
+
+*Demo mode. Configure OpenAI API for advanced AI capabilities.*`,
+          
+          'growth-coach': `🚀 Growth Coach Insights
+
+**Three Key Observations:**
+
+1. **Customer Acquisition:** Your conversion rate is trending upward (+8% this month). Focus on doubling down on the channels that are working.
+
+2. **Retention Metrics:** Customer lifetime value is increasing, which indicates strong product-market fit. Consider implementing a loyalty program.
+
+3. **Operational Leverage:** You're doing more with the same resources - efficiency is up 15%. This creates room for strategic investments.
+
+**Marketing Risk to Monitor:**
+⚠️ Watch your customer acquisition cost (CAC) - it's risen 12% in the past 30 days. If it continues, recalibrate your ad spend allocation.
+
+**Recommended Action (Next 14 Days):**
+Launch a referral incentive program. Based on your current NPS, you could generate 20-30 qualified leads at near-zero acquisition cost. Set aside 2 hours this week to design the mechanics and messaging.
+
+**Motivational Note:**
+You're building momentum! The compound effect of consistent improvements will show exponential results in Q1 2026. Stay focused on execution.
+
+*Demo coaching session. Add OpenAI API key for personalized growth strategies.*`,
+        };
+
+        const demoResponse = demoResponses[assistantKey] || demoResponses['assistant'];
+        const assistantMessage = {
+          role: 'assistant',
+          content: demoResponse,
+          auditLogId: null,
+        };
+        setMessages((prev) => [...prev, assistantMessage]);
+        toast('Demo mode: Configure OpenAI API key in .env for real AI responses', { duration: 4000 });
+      } else {
+        setMessages((prev) => prev.slice(0, -1));
+        toast.error(error.message || 'Unable to generate response.');
+      }
     } finally {
       setAbortController(null);
       setIsSending(false);

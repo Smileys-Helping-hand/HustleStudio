@@ -42,7 +42,9 @@ export const AuthProvider = ({ children }) => {
 
   const loadMemberships = useCallback(
     async (uid) => {
+      console.log('[AuthContext] loadMemberships called with uid:', uid);
       if (!uid) {
+        console.log('[AuthContext] No uid provided, clearing memberships');
         setMemberships([]);
         return [];
       }
@@ -52,11 +54,13 @@ export const AuthProvider = ({ children }) => {
           where('uid', '==', uid)
         );
         const snapshot = await getDocs(membershipsQuery);
+        console.log('[AuthContext] Found', snapshot.docs.length, 'membership documents');
         const mapped = snapshot.docs.map((docSnapshot) => ({
           tenantId: docSnapshot.ref.parent.parent?.id ?? docSnapshot.data().tenantId ?? 'default',
           role: docSnapshot.data().role ?? 'viewer',
           ...docSnapshot.data(),
         }));
+        console.log('[AuthContext] Mapped memberships:', mapped);
         setMemberships(mapped);
         return mapped;
       } catch (error) {

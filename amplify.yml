@@ -31,10 +31,14 @@ frontend:
       headers:
         - key: Cache-Control
           value: no-cache
+        - key: X-Frame-Options
+          value: ALLOWALL
     - pattern: '**/*'
       headers:
         - key: Cache-Control
           value: max-age=31536000,public
+        - key: X-Frame-Options
+          value: ALLOWALL
 env:
   variables:
     VITE_FIREBASE_API_KEY: ${FIREBASE_API_KEY}

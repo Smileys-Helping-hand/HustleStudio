@@ -7,6 +7,7 @@ import ProtectedRoute from './components/ProtectedRoute.jsx';
 import { useAuth } from './context/AuthContext.jsx';
 import IntroGate from './components/IntroGate.jsx';
 import DiagnosticsOverlay from './components/DiagnosticsOverlay.jsx';
+import GettingStartedGuide from './components/GettingStartedGuide.jsx';
 import { getBooleanEnv } from './lib/env.js';
 
 const Dashboard = lazy(() => import('./pages/Dashboard.jsx'));
@@ -24,7 +25,7 @@ const AdminPage = lazy(() => import('./pages/admin/AdminPage.jsx'));
 const Projects = lazy(() => import('./pages/Projects.jsx'));
 const Finance = lazy(() => import('./pages/Finance.jsx'));
 const CRM = lazy(() => import('./pages/CRM.jsx'));
-const CRMInvoices = lazy(() => import('./pages/CRM/Invoices.jsx'));
+const CRMInvoices = lazy(() => import('./pages/CRM/InvoicesV2.jsx'));
 const AIHub = lazy(() => import('./pages/AIHub.jsx'));
 const AIOrchestrator = lazy(() => import('./pages/ai/Orchestrator.jsx'));
 const Analytics = lazy(() => import('./pages/Analytics.jsx'));
@@ -50,7 +51,6 @@ const Marketplace = lazy(() => import('./pages/Marketplace.jsx'));
 const AppStore = lazy(() => import('./pages/AppStore.jsx'));
 const AnalyticsCloud = lazy(() => import('./pages/AnalyticsCloud.jsx'));
 const Forecasts = lazy(() => import('./pages/Forecasts.jsx'));
-const CustomDashboards = lazy(() => import('./pages/CustomDashboards.jsx'));
 const Affiliates = lazy(() => import('./pages/Affiliates.jsx'));
 const PartnerDashboard = lazy(() => import('./pages/PartnerDashboard.jsx'));
 const PartnerOnboard = lazy(() => import('./pages/Partners/Onboard.jsx'));
@@ -62,7 +62,6 @@ const AdminAIAudit = lazy(() => import('./pages/admin/AIAudit.jsx'));
 const AdminAIMetrics = lazy(() => import('./pages/admin/AIMetrics.jsx'));
 const AdminGlobalInsights = lazy(() => import('./pages/admin/GlobalInsights.jsx'));
 const AdminBIReports = lazy(() => import('./pages/admin/BIReports.jsx'));
-const FaultLookupPage = lazy(() => import('./pages/FaultLookupPage.jsx'));
 
 const resolveBiReportsEnabled = () => getBooleanEnv('VITE_BI_REPORTS_ENABLED', true);
 
@@ -159,11 +158,9 @@ const App = () => {
                 <Route index element={<PartnerDashboard />} />
                 <Route path="onboard" element={<PartnerOnboard />} />
               </Route>
-              <Route path="dashboards/custom" element={<CustomDashboards />} />
               <Route path="tools" element={<Tools />} />
               <Route path="tools/marketing" element={<MarketingTools />} />
               <Route path="tools/scheduler" element={<SchedulerTools />} />
-              <Route path="faults" element={<FaultLookupPage />} />
               <Route path="team" element={<Team />} />
               <Route path="settings" element={<Settings />} />
               <Route path="visuals" element={<Visuals />} />
@@ -195,6 +192,7 @@ const App = () => {
         </div>
       )}
       <DiagnosticsOverlay />
+      {user && <GettingStartedGuide />}
     </>
   );
 };

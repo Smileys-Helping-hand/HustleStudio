@@ -34,13 +34,21 @@ export const TenantProvider = ({ children }) => {
   const presenceCleanupRef = useRef(null);
 
   const hydrateTenants = useCallback(async () => {
+    console.log('[TenantContext] hydrateTenants called', {
+      hasUser: !!user,
+      membershipsCount: memberships?.length ?? 0,
+      memberships,
+    });
+
     if (!user) {
+      console.log('[TenantContext] No user, clearing tenants');
       setTenantSummaries([]);
       setActiveTenantId(null);
       setLoading(false);
       return [];
     }
     if (!memberships || memberships.length === 0) {
+      console.log('[TenantContext] No memberships, clearing tenants');
       setTenantSummaries([]);
       setActiveTenantId(null);
       setLoading(false);
@@ -49,11 +57,13 @@ export const TenantProvider = ({ children }) => {
 
     setLoading(true);
     try {
+      console.log('[TenantContext] Fetching tenant details for memberships:', memberships);
       const mapped = await Promise.all(
         memberships.map(async (membership) => {
           const tenantRef = doc(db, 'tenants', membership.tenantId);
           const snapshot = await getDoc(tenantRef);
           const data = snapshot.exists() ? decodeTenantData(snapshot.data()) : {};
+          console.log(`[TenantContext] Fetched tenant ${membership.tenantId}:`, data);
           return {
             id: membership.tenantId,
             role: membership.role ?? 'viewer',
@@ -67,12 +77,16 @@ export const TenantProvider = ({ children }) => {
           };
         })
       );
+      console.log('[TenantContext] Mapped tenants:', mapped);
       setTenantSummaries(mapped);
       setActiveTenantId((current) => {
         if (current && mapped.some((tenant) => tenant.id === current)) {
+          console.log('[TenantContext] Keeping current active tenant:', current);
           return current;
         }
-        return mapped[0]?.id ?? null;
+        const newActive = mapped[0]?.id ?? null;
+        console.log('[TenantContext] Setting new active tenant:', newActive);
+        return newActive;
       });
       return mapped;
     } catch (error) {
@@ -118,6 +132,7 @@ export const TenantProvider = ({ children }) => {
   }, [activeTenantId, user]);
 
   const switchTenant = useCallback((tenantId) => {
+    console.log('[TenantContext] switchTenant called:', tenantId);
     setActiveTenantId(tenantId);
   }, []);
 
@@ -183,30 +198,62 @@ export const TenantProvider = ({ children }) => {
     async ({ name, accent }) => {
       if (!user) {
         toast.error('Sign in to create a workspace.');
-        return null;
+        throw new Error('User not authenticated');
       }
-      const tenantRef = doc(collection(db, 'tenants'));
-      await setDoc(tenantRef, {
-        name: name || 'New Workspace',
-        accent: accent || '#6366f1',
-        createdAt: serverTimestamp(),
-        ownerId: user.uid,
-        plan: import.meta.env.VITE_TENANT_DEFAULT_PLAN || 'free',
-        telemetryEnabled: getTelemetryDefault(),
-      });
-      const memberRef = doc(db, 'tenants', tenantRef.id, 'users', user.uid);
-      await setDoc(memberRef, {
-        uid: user.uid,
-        role: 'Owner',
-        email: user.email ?? '',
-        joinedAt: serverTimestamp(),
-      });
-      await refreshMemberships(user.uid);
-      await hydrateTenants();
-      setActiveTenantId(tenantRef.id);
-      toast.success('Workspace created.');
-      await logEvent(tenantRef.id, user.uid, 'Created Workspace', { name });
-      return tenantRef.id;
+      
+      try {
+        console.log('[TenantContext] Creating workspace:', { name, accent });
+        
+        // Create tenant document
+        const tenantRef = doc(collection(db, 'tenants'));
+        await setDoc(tenantRef, {
+          name: name || 'New Workspace',
+          accent: accent || '#6366f1',
+          createdAt: serverTimestamp(),
+          ownerId: user.uid,
+          plan: import.meta.env.VITE_TENANT_DEFAULT_PLAN || 'free',
+          telemetryEnabled: getTelemetryDefault(),
+        });
+        
+        console.log('[TenantContext] Tenant document created:', tenantRef.id);
+        
+        // Create member document
+        const memberRef = doc(db, 'tenants', tenantRef.id, 'users', user.uid);
+        await setDoc(memberRef, {
+          uid: user.uid,
+          role: 'Owner',
+          email: user.email ?? '',
+          joinedAt: serverTimestamp(),
+        });
+        
+        console.log('[TenantContext] Member document created');
+        
+        // Refresh memberships and tenants
+        await refreshMemberships(user.uid);
+        console.log('[TenantContext] Memberships refreshed');
+        
+        await hydrateTenants();
+        console.log('[TenantContext] Tenants hydrated');
+        
+        // Switch to new tenant
+        setActiveTenantId(tenantRef.id);
+        console.log('[TenantContext] Switched to new tenant:', tenantRef.id);
+        
+        toast.success(`Workspace "${name}" created successfully!`);
+        
+        // Log event
+        try {
+          await logEvent(tenantRef.id, user.uid, 'Created Workspace', { name });
+        } catch (logError) {
+          console.warn('[TenantContext] Failed to log event:', logError);
+        }
+        
+        return tenantRef.id;
+      } catch (error) {
+        console.error('[TenantContext] Failed to create workspace:', error);
+        toast.error('Failed to create workspace. Please try again.');
+        throw error;
+      }
     },
     [hydrateTenants, refreshMemberships, user]
   );

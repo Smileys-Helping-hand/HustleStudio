@@ -89,12 +89,12 @@ const Dashboard = () => {
   ];
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-[#0e0e18] via-[#14122a] to-[#1b1830] px-4 pb-16 text-white sm:px-8">
+    <main className="min-h-screen bg-gradient-to-br from-[#0e0e18] via-[#14122a] to-[#1b1830] px-6 pb-24 text-white sm:px-10 lg:px-12">
       <PageHeader
         title="Business Operations Hub"
         subtitle="Launch tills, sync visuals, review cashflow, and brief your AI copilots from a single command centre."
         actions={
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap gap-4">
             <Link
               to="/analytics"
               className="inline-flex items-center gap-2 rounded-full border border-indigo-400/40 bg-indigo-500/20 px-4 py-2 text-sm text-indigo-100 transition hover:bg-indigo-500/30"
@@ -111,7 +111,7 @@ const Dashboard = () => {
         }
       />
 
-      <div className="mt-6 flex flex-wrap gap-3 rounded-3xl border border-white/10 bg-white/5 p-4 text-xs uppercase tracking-[0.3em] text-white/70 shadow-[0_0_30px_rgba(99,102,241,0.12)]">
+      <div className="mt-8 flex flex-wrap gap-4 rounded-3xl border border-white/10 bg-white/5 p-6 text-xs uppercase tracking-[0.3em] text-white/70 shadow-[0_0_30px_rgba(99,102,241,0.12)]">
         <Link
           to="/marketing/lab"
           className="inline-flex items-center gap-2 rounded-full bg-indigo-500/30 px-4 py-2 text-indigo-100 transition hover:bg-indigo-500/40"
@@ -132,12 +132,12 @@ const Dashboard = () => {
         </Link>
       </div>
 
-      <section className="grid gap-4 rounded-3xl border border-white/10 bg-white/5 p-6 shadow-[0_0_30px_rgba(99,102,241,0.15)] md:grid-cols-4">
+      <section className="grid gap-5 rounded-3xl border border-white/10 bg-white/5 p-8 shadow-[0_0_30px_rgba(99,102,241,0.15)] md:grid-cols-4">
         {quickSummary.map((item) => (
           <Link
             key={item.label}
             to={item.to}
-            className="group flex flex-col rounded-2xl border border-white/10 bg-black/30 p-4 transition hover:-translate-y-1 hover:border-indigo-400/50"
+            className="group flex flex-col rounded-2xl border border-white/10 bg-black/30 p-5 transition hover:-translate-y-1 hover:border-indigo-400/50"
           >
             <span className="text-xs uppercase tracking-[0.3em] text-white/50">{item.label}</span>
             <span className="mt-3 text-2xl font-semibold text-white group-hover:text-indigo-200">{item.value}</span>
@@ -146,7 +146,7 @@ const Dashboard = () => {
         ))}
       </section>
 
-      <section className="mt-10 grid gap-6 lg:grid-cols-[2fr_1fr]">
+      <section className="mt-12 grid gap-8 lg:grid-cols-[2fr_1fr]">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
