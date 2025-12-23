@@ -19,6 +19,7 @@ import {
   FiTool,
   FiTrendingUp,
   FiZap,
+  FiLogOut,
 } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useTheme } from '../theme/ThemeContext.jsx';
@@ -34,7 +35,7 @@ const navLinkBase =
   'flex items-center gap-2 rounded-full px-4 py-2 text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent';
 
 export default function Navbar() {
-  const { role } = useAuth();
+  const { role, signOut } = useAuth();
   const { activeMembership, brand } = useTenant();
   const membershipRole = activeMembership?.role ?? role ?? 'viewer';
   const { cycleTheme, themeKey } = useTheme();
@@ -158,6 +159,15 @@ export default function Navbar() {
               aria-label="Toggle theme"
             >
               {themeKey.toUpperCase()}
+            </button>
+            <button
+              type="button"
+              onClick={signOut}
+              className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs uppercase tracking-[0.35em] text-white/60 transition hover:border-red-400/50 hover:bg-red-500/10 hover:text-red-400"
+              aria-label="Log out"
+            >
+              <FiLogOut className="text-base" />
+              Log Out
             </button>
           </div>
         </div>
