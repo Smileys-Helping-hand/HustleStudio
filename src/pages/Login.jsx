@@ -181,11 +181,7 @@ const Login = () => {
               ))}
             </div>
           </div>
-        )}  {preset.label}
-              </button>
-            ))}
-          </div>
-        </div>
+        )}
       </motion.div>
     </div>
   );
