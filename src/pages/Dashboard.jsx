@@ -217,6 +217,7 @@ const Dashboard = () => {
           </ul>
         </motion.aside>
       </section>
+      </div>
     </main>
   );
 };
