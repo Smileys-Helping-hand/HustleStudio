@@ -8,16 +8,11 @@ import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth, db } from '../lib/firebase';
 import { doc, setDoc } from 'firebase/firestore';
 
-const presets = [
-  { email: 'admin@studio.com', label: 'Log in as Admin' },
-  { email: 'staff@studio.com', label: 'Log in as Staff' },
-];
-
 const Login = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
-  const [email, setEmail] = useState('admin@studio.com');
-  const [password, setPassword] = useState('Admin123!');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSignup, setIsSignup] = useState(false);
 
@@ -75,12 +70,6 @@ const Login = () => {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const applyPreset = (presetEmail) => {
-    setEmail(presetEmail);
-    setPassword(presetEmail === 'admin@studio.com' ? 'Admin123!' : 'Staff123!');
-    toast.success(`Using ${presetEmail} credentials`);
   };
 
   return (
@@ -162,26 +151,6 @@ const Login = () => {
             {isSignup ? 'Already have an account? Log in' : 'New to Hustle Studio? Create an account'}
           </button>
         </div>
-
-        {!isSignup && (
-          <div className="mt-8 space-y-3">
-            <p className="text-xs font-semibold uppercase tracking-widest text-white/40">
-              Quick presets
-            </p>
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-              {presets.map((preset) => (
-                <button
-                  key={preset.email}
-                  type="button"
-                  onClick={() => applyPreset(preset.email)}
-                  className="rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/80 transition hover:border-brand-500/60 hover:text-white"
-                >
-                  {preset.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
       </motion.div>
     </div>
   );
