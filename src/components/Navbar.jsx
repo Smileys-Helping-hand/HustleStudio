@@ -26,6 +26,7 @@ import { useTheme } from '../theme/ThemeContext.jsx';
 import { useNotifications } from '../context/NotificationContext.jsx';
 import NotificationsDrawer from './NotificationsDrawer.jsx';
 import TenantSwitcher from './TenantSwitcher.jsx';
+import ThemeSelector from './ThemeSelector.jsx';
 import LivePresenceBar from './LivePresenceBar.jsx';
 import { useTenant } from '../context/TenantContext.jsx';
 import { canManage, canView } from '../lib/permissions.js';
@@ -160,14 +161,7 @@ export default function Navbar() {
                 </span>
               )}
             </button>
-            <button
-              type="button"
-              onClick={cycleTheme}
-              className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs uppercase tracking-[0.35em] text-white/60 transition hover:border-white/30"
-              aria-label="Toggle theme"
-            >
-              {themeKey.toUpperCase()}
-            </button>
+            <ThemeSelector />
             <button
               type="button"
               onClick={signOut}

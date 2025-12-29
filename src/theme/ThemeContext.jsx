@@ -25,7 +25,15 @@ const applyThemeToDocument = (theme) => {
   root.style.setProperty('--theme-accent', theme.accent);
   root.style.setProperty('--theme-secondary', theme.secondary);
   root.style.setProperty('--theme-highlight', theme.secondary);
-  document.body.style.backgroundColor = theme.background;
+  
+  // Apply gradient if available
+  if (theme.gradient) {
+    root.style.setProperty('--theme-gradient', theme.gradient);
+    document.body.style.background = theme.gradient;
+  } else {
+    root.style.setProperty('--theme-gradient', theme.background);
+    document.body.style.backgroundColor = theme.background;
+  }
 
   const metaTheme = document.querySelector('meta[name="theme-color"]');
   if (metaTheme) {
