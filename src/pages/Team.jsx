@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { getDocs } from 'firebase/firestore';
 import { motion } from 'framer-motion';
-import { mockTeam } from '../mockData/team.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useTenant } from '../context/TenantContext.jsx';
 import { tenantCollection } from '../lib/tenant.js';
@@ -9,13 +8,13 @@ import { tenantCollection } from '../lib/tenant.js';
 const Team = () => {
   const { reportOffline } = useAuth();
   const { activeTenantId } = useTenant();
-  const [members, setMembers] = useState(mockTeam);
+  const [members, setMembers] = useState([]);
 
   useEffect(() => {
     const fetchMembers = async () => {
       try {
         if (!activeTenantId) {
-          setMembers(mockTeam);
+          setMembers([]);
           return;
         }
         const snapshot = await getDocs(tenantCollection(activeTenantId, 'users'));
@@ -25,7 +24,7 @@ const Team = () => {
       } catch (error) {
         console.error('[Firestore] Failed to load team members', error);
         reportOffline();
-        setMembers(mockTeam);
+        setMembers([]);
       }
     };
 

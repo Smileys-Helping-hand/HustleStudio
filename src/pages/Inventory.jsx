@@ -14,14 +14,13 @@ import {
   reorderItems,
 } from '../lib/inventoryManager.js';
 import { generateInventoryInsight } from '../lib/insightBot.js';
-import { mockInventory } from '../mockData/inventory.js';
 
 const LOW_STOCK_THRESHOLD = 10;
 
 const Inventory = () => {
   const { activeTenantId, activeTenant } = useTenant();
   const { reportOffline } = useAuth();
-  const [items, setItems] = useState(mockInventory);
+  const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
@@ -33,18 +32,14 @@ const Inventory = () => {
     let unsubscribe;
     setLoading(true);
     if (!activeTenantId) {
-      setItems(mockInventory);
+      setItems([]);
       setLoading(false);
       return () => {};
     }
     unsubscribe = watchInventory(
       activeTenantId,
       (records) => {
-        if (!records.length) {
-          setItems(mockInventory);
-        } else {
-          setItems(records);
-        }
+        setItems(records);
         setLoading(false);
       },
       { includeArchived: false }

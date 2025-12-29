@@ -7,7 +7,6 @@ import { storage } from '../lib/firebase.js';
 import { tenantCollection } from '../lib/tenant.js';
 import { useTenant } from '../context/TenantContext.jsx';
 import { logEvent } from '../lib/auditLogger.js';
-import { mockReports } from '../mockData/reports.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useTheme } from '../theme/ThemeContext.jsx';
 import { exportToCSV, exportToGoogleSheets } from '../lib/exportUtils.js';
@@ -23,7 +22,7 @@ const Reports = () => {
   const { reportOffline, user } = useAuth();
   const { theme } = useTheme();
   const [period, setPeriod] = useState('weekly');
-  const [reports, setReports] = useState(mockReports);
+  const [reports, setReports] = useState([]);
   const [sales, setSales] = useState([]);
   const [teamActivity, setTeamActivity] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -34,7 +33,7 @@ const Reports = () => {
     setLoading(true);
     try {
       if (!activeTenantId) {
-        setReports(mockReports);
+        setReports([]);
         setSales([]);
         setTeamActivity([]);
         setLoading(false);
@@ -59,13 +58,13 @@ const Reports = () => {
       const teamSnapshot = await getDocs(tenantCollection(activeTenantId, 'users'));
       const teamData = teamSnapshot.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }));
 
-      setReports(reportData.length ? reportData : mockReports);
+      setReports(reportData);
       setSales(saleData);
       setTeamActivity(teamData);
     } catch (error) {
       console.error('[Reports] load failed', error);
       reportOffline();
-      setReports(mockReports);
+      setReports([]);
     } finally {
       setLoading(false);
     }

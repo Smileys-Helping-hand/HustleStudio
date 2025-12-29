@@ -1,34 +1,106 @@
 import { useEffect, useState } from 'react';
 import { ResponsiveContainer, Line, LineChart, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
+import { getDocs, query, orderBy as firestoreOrderBy, limit } from 'firebase/firestore';
 import PageHeader from '../components/common/PageHeader.jsx';
 import { useTenant } from '../context/TenantContext.jsx';
+import { tenantCollection } from '../lib/tenant.js';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
 
-// Mock data for demonstration
-const mockSnapshots = [
-  { salesGrowth: 0.12, recurringRevenue: 0.08, month: 'Jan' },
-  { salesGrowth: 0.15, recurringRevenue: 0.10, month: 'Feb' },
-  { salesGrowth: 0.18, recurringRevenue: 0.12, month: 'Mar' },
-  { salesGrowth: 0.22, recurringRevenue: 0.15, month: 'Apr' },
-  { salesGrowth: 0.19, recurringRevenue: 0.14, month: 'May' },
-  { salesGrowth: 0.25, recurringRevenue: 0.18, month: 'Jun' },
-];
-
 export default function Forecasts() {
   const { activeTenantId, activeTenant } = useTenant();
-  const [snapshots, setSnapshots] = useState(mockSnapshots);
+  const [snapshots, setSnapshots] = useState([]);
   const [insight, setInsight] = useState('');
   const [loading, setLoading] = useState(false);
+  const [dataLoading, setDataLoading] = useState(true);
+
+  // Fetch real financial data from Firebase
+  useEffect(() => {
+    const fetchForecastData = async () => {
+      if (!activeTenantId) {
+        setSnapshots([]);
+        setDataLoading(false);
+        return;
+      }
+
+      try {
+        setDataLoading(true);
+        
+        // Fetch last 6 months of sales data
+        const salesQuery = query(
+          tenantCollection(activeTenantId, 'sales'),
+          firestoreOrderBy('createdAt', 'desc'),
+          limit(180) // ~6 months of data
+        );
+        const salesSnapshot = await getDocs(salesQuery);
+        
+        // Group by month and calculate growth
+        const monthlyData = {};
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        
+        salesSnapshot.docs.forEach(doc => {
+          const data = doc.data();
+          const date = data.createdAt?.toDate();
+          if (date) {
+            const monthKey = `${months[date.getMonth()]} ${date.getFullYear()}`;
+            if (!monthlyData[monthKey]) {
+              monthlyData[monthKey] = { total: 0, count: 0, month: months[date.getMonth()] };
+            }
+            monthlyData[monthKey].total += data.totals?.total || 0;
+            monthlyData[monthKey].count += 1;
+          }
+        });
+
+        // Calculate growth rates
+        const sortedMonths = Object.keys(monthlyData).sort((a, b) => {
+          const [monthA, yearA] = a.split(' ');
+          const [monthB, yearB] = b.split(' ');
+          return new Date(yearA, months.indexOf(monthA)) - new Date(yearB, months.indexOf(monthB));
+        });
+
+        const forecastData = sortedMonths.slice(-6).map((monthKey, index) => {
+          const data = monthlyData[monthKey];
+          const prevMonthKey = sortedMonths[sortedMonths.indexOf(monthKey) - 1];
+          const prevData = prevMonthKey ? monthlyData[prevMonthKey] : null;
+          
+          const salesGrowth = prevData && prevData.total > 0
+            ? (data.total - prevData.total) / prevData.total
+            : 0;
+          
+          const recurringRevenue = data.count > 0 ? data.total / data.count : 0;
+          
+          return {
+            month: data.month,
+            salesGrowth: Math.max(0, Math.min(1, salesGrowth)), // Clamp between 0 and 1
+            recurringRevenue: recurringRevenue / 10000 // Normalize
+          };
+        });
+
+        setSnapshots(forecastData.length > 0 ? forecastData : []);
+      } catch (error) {
+        console.error('[Forecasts] Failed to fetch data:', error);
+        toast.error('Failed to load forecast data');
+      } finally {
+        setDataLoading(false);
+      }
+    };
+
+    fetchForecastData();
+  }, [activeTenantId]);
 
   const runForecast = async () => {
     if (!activeTenantId) {
       toast.error('Select a workspace first.');
       return;
     }
+    
+    if (snapshots.length === 0) {
+      toast.error('Not enough historical data to generate forecast');
+      return;
+    }
+    
     setLoading(true);
     try {
-      // Mock forecast generation
       const avgGrowth = snapshots.reduce((sum, s) => sum + s.salesGrowth, 0) / snapshots.length;
       const avgRevenue = snapshots.reduce((sum, s) => sum + s.recurringRevenue, 0) / snapshots.length;
       

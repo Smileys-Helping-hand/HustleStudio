@@ -1,78 +1,151 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar } from 'recharts';
+import { getDocs, query, where, Timestamp, orderBy } from 'firebase/firestore';
 import { useTenant } from '../context/TenantContext.jsx';
 import { generateFinanceInsight } from '../lib/insightBot.js';
+import { tenantCollection } from '../lib/tenant.js';
 import toast from 'react-hot-toast';
 
 const COLORS = ['#8b5cf6', '#22d3ee', '#f97316', '#10b981', '#f59e0b'];
 
-// Mock data for demonstration
-const mockSalesSeries = [
-  { label: 'Mon', total: 1250 },
-  { label: 'Tue', total: 1580 },
-  { label: 'Wed', total: 1890 },
-  { label: 'Thu', total: 2100 },
-  { label: 'Fri', total: 2450 },
-  { label: 'Sat', total: 2890 },
-  { label: 'Sun', total: 1920 },
-];
-
-const mockAiUsageSplit = [
-  { label: 'Strategy GPT', value: 35 },
-  { label: 'Finance GPT', value: 28 },
-  { label: 'Inventory GPT', value: 22 },
-  { label: 'Assistant GPT', value: 15 },
-];
-
-const mockRevenueVsCredits = [
-  { label: 'Week 1', revenue: 4500, credits: 120 },
-  { label: 'Week 2', revenue: 5200, credits: 150 },
-  { label: 'Week 3', revenue: 4800, credits: 135 },
-  { label: 'Week 4', revenue: 6100, credits: 180 },
-];
-
 const Insights = () => {
-  const { activeTenant } = useTenant();
-  const [salesSeries, setSalesSeries] = useState(mockSalesSeries);
-  const [aiUsageSplit, setAiUsageSplit] = useState(mockAiUsageSplit);
-  const [revenueVsCredits, setRevenueVsCredits] = useState(mockRevenueVsCredits);
+  const { activeTenant, activeTenantId } = useTenant();
+  const [salesSeries, setSalesSeries] = useState([]);
+  const [aiUsageSplit, setAiUsageSplit] = useState([]);
+  const [revenueVsCredits, setRevenueVsCredits] = useState([]);
   const [summary, setSummary] = useState('');
   const [loadingSummary, setLoadingSummary] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch real data from Firebase
+  useEffect(() => {
+    const fetchInsightsData = async () => {
+      if (!activeTenantId) {
+        setSalesSeries([]);
+        setAiUsageSplit([]);
+        setRevenueVsCredits([]);
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        const sevenDaysAgo = Timestamp.fromMillis(Date.now() - 7 * 24 * 60 * 60 * 1000);
+        
+        // Fetch sales data
+        const salesQuery = query(
+          tenantCollection(activeTenantId, 'sales'),
+          where('createdAt', '>=', sevenDaysAgo),
+          orderBy('createdAt', 'asc')
+        );
+        const salesSnapshot = await getDocs(salesQuery);
+        const salesByDay = {};
+        const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        
+        salesSnapshot.docs.forEach(doc => {
+          const data = doc.data();
+          const date = data.createdAt?.toDate();
+          if (date) {
+            const dayLabel = days[date.getDay()];
+            salesByDay[dayLabel] = (salesByDay[dayLabel] || 0) + (data.totals?.total || 0);
+          }
+        });
+        
+        const salesData = days.map(day => ({ label: day, total: salesByDay[day] || 0 }));
+        setSalesSeries(salesData);
+
+        // Fetch AI usage data
+        const aiLogsSnapshot = await getDocs(tenantCollection(activeTenantId, 'aiLogs'));
+        const aiUsage = {};
+        aiLogsSnapshot.docs.forEach(doc => {
+          const data = doc.data();
+          const assistant = data.assistant || 'General';
+          aiUsage[assistant] = (aiUsage[assistant] || 0) + 1;
+        });
+        
+        const totalUsage = Object.values(aiUsage).reduce((sum, val) => sum + val, 0);
+        const aiData = Object.entries(aiUsage).map(([label, count]) => ({
+          label,
+          value: totalUsage > 0 ? Math.round((count / totalUsage) * 100) : 0
+        }));
+        setAiUsageSplit(aiData);
+
+        // Fetch revenue and credits data (last 4 weeks)
+        const fourWeeksAgo = Timestamp.fromMillis(Date.now() - 28 * 24 * 60 * 60 * 1000);
+        const revenueQuery = query(
+          tenantCollection(activeTenantId, 'sales'),
+          where('createdAt', '>=', fourWeeksAgo),
+          orderBy('createdAt', 'asc')
+        );
+        const revenueSnapshot = await getDocs(revenueQuery);
+        const weeklyData = { 'Week 1': 0, 'Week 2': 0, 'Week 3': 0, 'Week 4': 0 };
+        
+        revenueSnapshot.docs.forEach(doc => {
+          const data = doc.data();
+          const date = data.createdAt?.toDate();
+          if (date) {
+            const weekNum = Math.floor((Date.now() - date.getTime()) / (7 * 24 * 60 * 60 * 1000));
+            const weekLabel = `Week ${4 - weekNum}`;
+            if (weeklyData[weekLabel] !== undefined) {
+              weeklyData[weekLabel] += data.totals?.total || 0;
+            }
+          }
+        });
+        
+        const revenueData = Object.entries(weeklyData).map(([label, revenue]) => ({
+          label,
+          revenue: Math.round(revenue),
+          credits: Math.round(revenue / 50) // Estimate credits based on revenue
+        }));
+        setRevenueVsCredits(revenueData);
+
+      } catch (error) {
+        console.error('[Insights] Failed to fetch data:', error);
+        toast.error('Failed to load insights data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchInsightsData();
+  }, [activeTenantId]);
 
   const handleGenerateSummary = async () => {
+    if (!activeTenantId) {
+      toast.error('Select a workspace first');
+      return;
+    }
+
     try {
       setLoadingSummary(true);
-      const payload = {
-        sales: salesSeries,
-        ai: aiUsageSplit,
-        revenue: revenueVsCredits,
-      };
+      const totalSales = salesSeries.reduce((sum, day) => sum + day.total, 0);
+      const bestDay = salesSeries.reduce((max, day) => day.total > max.total ? day : max, salesSeries[0] || { label: 'N/A', total: 0 });
+      const totalRevenue = revenueVsCredits.reduce((sum, week) => sum + week.revenue, 0);
+      const avgCredits = revenueVsCredits.length > 0 ? Math.round(revenueVsCredits.reduce((sum, week) => sum + week.credits, 0) / revenueVsCredits.length) : 0;
+      const topAI = aiUsageSplit.length > 0 ? aiUsageSplit[0] : { label: 'N/A', value: 0 };
       
-      // Mock summary generation
-      const mockSummary = `📊 Weekly Performance Summary
+      const generatedSummary = `📊 Weekly Performance Summary
 
 Sales Trends:
-• Total weekly sales: $${salesSeries.reduce((sum, day) => sum + day.total, 0).toLocaleString()}
-• Best performing day: ${salesSeries.reduce((max, day) => day.total > max.total ? day : max).label} ($${salesSeries.reduce((max, day) => day.total > max.total ? day : max).total})
-• Week-over-week growth: +18% (strong upward momentum)
+• Total weekly sales: $${totalSales.toLocaleString()}
+• Best performing day: ${bestDay.label} ($${bestDay.total.toLocaleString()})
+${salesSeries.length > 0 ? `• Average daily sales: $${Math.round(totalSales / salesSeries.length).toLocaleString()}` : ''}
 
 AI Assistant Insights:
-• Most utilized: ${aiUsageSplit[0].label} (${aiUsageSplit[0].value}% of queries)
-• Total AI interactions: ${aiUsageSplit.reduce((sum, item) => sum + item.value, 0)} sessions
-• Efficiency gain: Estimated 12 hours saved this week
+${aiUsageSplit.length > 0 ? `• Most utilized: ${topAI.label} (${topAI.value}% of queries)` : '• No AI usage data available'}
+${aiUsageSplit.length > 0 ? `• Total AI sessions: ${aiUsageSplit.reduce((sum, item) => sum + item.value, 0)}` : ''}
 
 Revenue & Credits Analysis:
-• Monthly revenue trajectory: $${revenueVsCredits.reduce((sum, week) => sum + week.revenue, 0).toLocaleString()}
-• Average credit consumption: ${Math.round(revenueVsCredits.reduce((sum, week) => sum + week.credits, 0) / revenueVsCredits.length)} credits/week
-• ROI on AI tools: 340% based on time savings vs credit cost
+• Monthly revenue: $${totalRevenue.toLocaleString()}
+${avgCredits > 0 ? `• Average credit consumption: ${avgCredits} credits/week` : ''}
 
 🎯 Recommended Actions:
-1. Continue current sales momentum - Saturday shows peak performance
-2. Increase Strategy GPT usage for scaling planning
-3. Consider credit top-up next week to maintain AI assistant availability`;
+1. ${bestDay.total > 0 ? `Focus marketing on ${bestDay.label} - your peak performance day` : 'Start tracking sales data for insights'}
+2. ${aiUsageSplit.length > 0 ? 'Continue leveraging AI assistants for efficiency gains' : 'Enable AI assistants to boost productivity'}
+3. ${totalRevenue > 0 ? 'Maintain current momentum and explore upsell opportunities' : 'Begin recording sales to track revenue trends'}`;
 
-      setSummary(mockSummary);
+      setSummary(generatedSummary);
       toast.success('Weekly digest generated');
     } catch (error) {
       console.error('[Insights] Failed to create summary', error);
