@@ -89,15 +89,36 @@ const Dashboard = () => {
   ];
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-[#0e0e18] via-[#14122a] to-[#1b1830] px-6 pb-24 text-white sm:px-10 lg:px-12">
-      <PageHeader
-        title="Business Operations Hub"
-        subtitle="Launch tills, sync visuals, review cashflow, and brief your AI copilots from a single command centre."
-        actions={
-          <div className="flex flex-wrap gap-4">
-            <Link
-              to="/analytics"
-              className="inline-flex items-center gap-2 rounded-full border border-indigo-400/40 bg-indigo-500/20 px-4 py-2 text-sm text-indigo-100 transition hover:bg-indigo-500/30"
+    <main className="min-h-screen bg-gradient-to-br from-[#0a0a14] via-[#14122a] to-[#1e1640] px-6 pb-24 text-white sm:px-10 lg:px-12 relative overflow-hidden">
+      {/* Animated background elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <motion.div
+          className="absolute -top-40 -right-40 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl"
+          animate={{
+            scale: [1, 1.2, 1],
+            opacity: [0.3, 0.5, 0.3],
+          }}
+          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+        />
+        <motion.div
+          className="absolute -bottom-40 -left-40 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl"
+          animate={{
+            scale: [1.2, 1, 1.2],
+            opacity: [0.5, 0.3, 0.5],
+          }}
+          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+        />
+      </div>
+
+      <div className="relative z-10">
+        <PageHeader
+          title="Business Operations Hub"
+          subtitle="Launch tills, sync visuals, review cashflow, and brief your AI copilots from a single command centre."
+          actions={
+            <div className="flex flex-wrap gap-4">
+              <Link
+                to="/analytics"
+                className="inline-flex items-center gap-2 rounded-full border border-indigo-400/40 bg-indigo-500/20 px-4 py-2 text-sm text-indigo-100 transition hover:bg-indigo-500/30 hover:scale-105 hover:shadow-lg hover:shadow-indigo-500/20"
             >
               View Analytics
             </Link>

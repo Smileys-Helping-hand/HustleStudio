@@ -4,6 +4,7 @@ import { Navigate, Outlet, Route, Routes, useLocation } from 'react-router-dom';
 import Navbar from './components/Navbar.jsx';
 import VersionFooter from './components/VersionFooter.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
+import LoadingSpinner from './components/LoadingSpinner.jsx';
 import { useAuth } from './context/AuthContext.jsx';
 import IntroGate from './components/IntroGate.jsx';
 import DiagnosticsOverlay from './components/DiagnosticsOverlay.jsx';
@@ -92,10 +93,8 @@ const ProtectedLayout = () => {
 };
 
 const SuspenseFallback = () => (
-  <div className="flex min-h-screen items-center justify-center bg-[var(--theme-background)] text-[var(--theme-text)]">
-    <div className="rounded-xl border border-white/10 bg-white/5 px-6 py-4 text-lg text-white/80 shadow-lg">
-      Loading page...
-    </div>
+  <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-[#0a0a14] via-[#14122a] to-[#1e1640]">
+    <LoadingSpinner size="lg" message="Loading your workspace..." />
   </div>
 );
 

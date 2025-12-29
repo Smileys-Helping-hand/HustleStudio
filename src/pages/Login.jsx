@@ -74,9 +74,29 @@ const Login = () => {
 
   return (
     <div
-      className="flex min-h-screen items-center justify-center bg-cover bg-center px-4"
+      className="relative flex min-h-screen items-center justify-center bg-cover bg-center px-4 overflow-hidden"
       style={{ backgroundImage: `url(${ASSETS.backgroundLogin})` }}
     >
+      {/* Animated gradient overlays */}
+      <motion.div
+        className="absolute top-0 left-0 w-96 h-96 bg-purple-600/30 rounded-full blur-3xl"
+        animate={{
+          scale: [1, 1.3, 1],
+          x: [0, 50, 0],
+          y: [0, 30, 0],
+        }}
+        transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+      />
+      <motion.div
+        className="absolute bottom-0 right-0 w-96 h-96 bg-indigo-600/30 rounded-full blur-3xl"
+        animate={{
+          scale: [1.3, 1, 1.3],
+          x: [0, -50, 0],
+          y: [0, -30, 0],
+        }}
+        transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
+      />
+      
       <motion.div
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}

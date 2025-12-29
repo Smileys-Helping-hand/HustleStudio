@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import { getDocs } from 'firebase/firestore';
 import { motion } from 'framer-motion';
+import { FiUsers } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useTenant } from '../context/TenantContext.jsx';
 import { tenantCollection } from '../lib/tenant.js';
+import EmptyState from '../components/EmptyState.jsx';
 
 const Team = () => {
   const { reportOffline } = useAuth();
