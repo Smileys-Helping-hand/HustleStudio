@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { useState } from 'prop-types';
-import { FiCheck, FiPalette } from 'react-icons/fi';
+import { useState } from 'react';
+import { FiCheck, FiDroplet } from 'react-icons/fi';
 import { useTheme } from '../theme/ThemeContext';
 import { themes } from '../theme/themes';
 
@@ -18,7 +18,7 @@ const ThemeSelector = () => {
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/80 backdrop-blur-sm transition hover:border-white/20 hover:bg-white/10"
       >
-        <FiPalette className="w-4 h-4" />
+        <FiDroplet className="w-4 h-4" />
         <span className="hidden sm:inline">Theme</span>
       </motion.button>
 
@@ -44,7 +44,7 @@ const ThemeSelector = () => {
             >
               <div className="p-4 border-b border-white/10">
                 <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-                  <FiPalette className="w-4 h-4" />
+                  <FiDroplet className="w-4 h-4" />
                   Choose Your Theme
                 </h3>
                 <p className="text-xs text-white/50 mt-1">
