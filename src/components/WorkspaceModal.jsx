@@ -53,7 +53,7 @@ const WorkspaceModal = ({ isOpen, onClose }) => {
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0, 0, 0, 0.7)', backdropFilter: 'blur(8px)' }}>
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 py-20" style={{ backgroundColor: 'rgba(0, 0, 0, 0.7)', backdropFilter: 'blur(8px)', paddingTop: '10vh', paddingBottom: '10vh' }}>
         {/* Backdrop */}
         <motion.div
           initial={{ opacity: 0 }}
@@ -68,7 +68,7 @@ const WorkspaceModal = ({ isOpen, onClose }) => {
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="relative z-10 w-full max-w-md rounded-2xl border border-white/10 bg-gradient-to-br from-[#1a1a2e] to-[#16213e] p-6 shadow-2xl"
+          className="relative z-10 w-full max-w-md rounded-2xl border border-white/10 bg-gradient-to-br from-[#1a1a2e] to-[#16213e] p-6 shadow-2xl my-auto"
         >
           {/* Close button */}
           <button
