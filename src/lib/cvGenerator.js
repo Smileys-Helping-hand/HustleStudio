@@ -1,4 +1,3 @@
-/* global process */
 import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import { db, storage } from './firebase';

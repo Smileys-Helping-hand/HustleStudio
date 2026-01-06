@@ -8,6 +8,7 @@ import { useAuth } from './AuthContext.jsx';
 import { useNotify } from './NotificationContext.jsx';
 import { useTenant } from './TenantContext.jsx';
 import { tenantCollection, tenantDoc } from '../lib/tenant.js';
+import logger from '../lib/logger.js';
 
 const resolveEnv = (key) => {
   if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env[key]) {
