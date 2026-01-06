@@ -65,6 +65,10 @@ const Projects = () => {
   }, [activeTenantId]);
 
   const handleCreate = () => {
+    if (!activeTenantId) {
+      toast.error('Please create or select a workspace first');
+      return;
+    }
     setEditingProject(null);
     setFormData({ title: '', description: '', status: 'Planning', dueDate: '' });
     setShowModal(true);
@@ -170,8 +174,7 @@ const Projects = () => {
         actions={
           <button
             onClick={handleCreate}
-            disabled={!activeTenantId}
-            className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-500 px-6 py-3 text-sm font-semibold transition hover:from-indigo-600 hover:to-purple-600 disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-500 px-6 py-3 text-sm font-semibold transition hover:from-indigo-600 hover:to-purple-600"
           >
             <FiPlus /> New Project
           </button>
@@ -202,16 +205,9 @@ const Projects = () => {
       {!loading && !error && projects.length === 0 && (
         <EmptyState
           title="No projects yet"
-          description="Create your first project to start tracking tasks and deliverables."
-          action={
-            <button
-              onClick={handleCreate}
-              disabled={!activeTenantId}
-              className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-500 px-6 py-3 text-sm font-semibold transition hover:from-indigo-600 hover:to-purple-600 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <FiPlus /> Create First Project
-            </button>
-          }
+          message="Create your first project to start tracking tasks and deliverables."
+          action={handleCreate}
+          actionLabel="Create First Project"
         />
       )}
 
