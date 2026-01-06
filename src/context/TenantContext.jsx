@@ -229,6 +229,13 @@ export const TenantProvider = ({ children }) => {
         
         logger.log('[TenantContext] Member document created');
         
+        // Log event
+        try {
+          await logEvent(tenantRef.id, user.uid, 'Created Workspace', { name });
+        } catch (logError) {
+          logger.warn('[TenantContext] Failed to log event:', logError);
+        }
+        
         // Refresh memberships and tenants
         await refreshMemberships(user.uid);
         logger.log('[TenantContext] Memberships refreshed');
@@ -236,18 +243,11 @@ export const TenantProvider = ({ children }) => {
         await hydrateTenants();
         logger.log('[TenantContext] Tenants hydrated');
         
-        // Switch to new tenant
+        // Switch to new tenant after refresh
         setActiveTenantId(tenantRef.id);
         logger.log('[TenantContext] Switched to new tenant:', tenantRef.id);
         
         toast.success(`Workspace "${name}" created successfully!`);
-        
-        // Log event
-        try {
-          await logEvent(tenantRef.id, user.uid, 'Created Workspace', { name });
-        } catch (logError) {
-          logger.warn('[TenantContext] Failed to log event:', logError);
-        }
         
         return tenantRef.id;
       } catch (error) {

@@ -39,10 +39,8 @@ const WorkspaceModal = ({ isOpen, onClose }) => {
       });
       console.log('[WorkspaceModal] Workspace created successfully:', tenantId);
       setFormData({ name: '', accent: '#6366f1' });
-      // Small delay to ensure state updates
-      setTimeout(() => {
-        onClose();
-      }, 500);
+      setError('');
+      onClose();
     } catch (err) {
       console.error('[WorkspaceModal] Failed to create workspace', err);
       setError(err.message || 'Failed to create workspace. Please try again.');
@@ -55,14 +53,14 @@ const WorkspaceModal = ({ isOpen, onClose }) => {
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
         {/* Backdrop */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onClose}
-          className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+          className="absolute inset-0 bg-transparent"
         />
 
         {/* Modal */}
