@@ -31,6 +31,7 @@ import LivePresenceBar from './LivePresenceBar.jsx';
 import { useTenant } from '../context/TenantContext.jsx';
 import { canManage, canView } from '../lib/permissions.js';
 import { getBooleanEnv } from '../lib/env.js';
+import { ASSETS } from '../config/assets.js';
 
 const navLinkBase =
   'flex items-center gap-2 rounded-full px-4 py-2 text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent';
@@ -134,13 +135,11 @@ export default function Navbar() {
           <div className="flex flex-1 items-center justify-center gap-3">
             <TenantSwitcher />
             <span className="flex items-center gap-3">
-              {brand?.logo ? (
-                <img
-                  src={brand.logo}
-                  alt={`${brand.name} logo`}
-                  className="hidden h-8 w-auto rounded-full border border-white/10 bg-white/10 object-contain sm:block"
-                />
-              ) : null}
+              <img
+                src={brand?.logo || ASSETS.logoMain}
+                alt={`${brand?.name || 'Hustle Studio'} logo`}
+                className="hidden h-8 w-auto rounded-full border border-white/10 bg-white/10 object-contain p-1 sm:block"
+              />
               <span className="page-heading text-lg font-semibold tracking-[0.3em] text-white/90 sm:text-xl">
                 {brand?.name || 'Hustle Studio OS'}
               </span>
