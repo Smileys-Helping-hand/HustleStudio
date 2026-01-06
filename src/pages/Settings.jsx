@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { FiUsers, FiKey, FiDatabase, FiBell, FiDownload, FiTrash2, FiSave } from 'react-icons/fi';
+import { FiUsers, FiKey, FiDatabase, FiBell, FiDownload, FiTrash2, FiSave, FiCode } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useTheme } from '../theme/ThemeContext.jsx';
 import { themes } from '../theme/themes.js';
@@ -8,6 +8,7 @@ import { useTenant } from '../context/TenantContext.jsx';
 import { toast } from 'react-hot-toast';
 import { collection, getDocs, addDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../lib/firebase.js';
+import { useNavigate } from 'react-router-dom';
 
 export default function Settings() {
   const { user, role } = useAuth();
@@ -16,6 +17,7 @@ export default function Settings() {
   const { activeTenant, activeTenantId, activeMembership, updateTelemetryPreference } = useTenant();
   const [telemetryEnabled, setTelemetryEnabled] = useState(activeTenant?.telemetryEnabled ?? true);
   const [isSavingTelemetry, setIsSavingTelemetry] = useState(false);
+  const navigate = useNavigate();
   
   // Workspace settings
   const [workspaceName, setWorkspaceName] = useState(activeTenant?.name || '');
@@ -270,7 +272,38 @@ export default function Settings() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="rounded-2xl border border-white/10 bg-white/5 p-6 shadow-lg backdrop-blur"
+          className="rounded-2xl border border-purple-500/20 bg-purple-500/5 p-6 shadow-lg backdrop-blur"
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <FiCode className="text-2xl text-purple-400" />
+              <div>
+                <h2 className="text-xl font-semibold">Developer & API Settings</h2>
+                <p className="text-sm text-white/60">Manage API keys and integrations</p>
+              </div>
+            </div>
+            <button
+              onClick={() => navigate('/settings/developer')}
+              className="rounded-lg bg-purple-500 px-4 py-2 text-sm font-medium transition hover:bg-purple-600"
+            >
+              Manage APIs
+            </button>
+          </div>
+
+          <div className="mt-4 rounded-lg border border-purple-400/30 bg-purple-500/10 p-4">
+            <p className="text-sm text-purple-200/80">
+              <strong>Hustle Connect</strong> enables external apps like WorkspaceOS to securely access your business data.
+              Create API keys with specific permissions to integrate with your workflows.
+            </p>
+          </div>
+        </motion.section>
+
+        {/* Legacy API Keys Section - Hidden, keeping for backward compatibility */}
+        <motion.section
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="hidden rounded-2xl border border-white/10 bg-white/5 p-6 shadow-lg backdrop-blur"
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">

@@ -1,0 +1,212 @@
+```
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                         HUSTLE CONNECT ARCHITECTURE                          ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              EXTERNAL APPS                                   │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐                      │
+│  │ WorkspaceOS  │  │  Other Apps  │  │   Zapier     │                      │
+│  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘                      │
+│         │                  │                  │                               │
+│         └──────────────────┴──────────────────┘                              │
+└─────────────────────────────┬───────────────────────────────────────────────┘
+                               │
+                               │ x-api-key: hs_live_xxxxx
+                               │
+┌──────────────────────────────▼───────────────────────────────────────────────┐
+│                         HUSTLE CONNECT API LAYER                             │
+│                                                                               │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │ MIDDLEWARE (api/middleware.js)                                      │    │
+│  │  ✓ CORS Handling                                                    │    │
+│  │  ✓ API Key Validation (SHA-256 hash comparison)                    │    │
+│  │  ✓ Scope Authorization                                              │    │
+│  │  ✓ Error Handling                                                   │    │
+│  └─────────────────────────────┬───────────────────────────────────────┘    │
+│                                 │                                             │
+│  ┌──────────────────────────────┴───────────────────────────────────────┐   │
+│  │                         API v1 ENDPOINTS                             │   │
+│  ├─────────────────────────────────────────────────────────────────────┤   │
+│  │  GET /api/v1/business-health  [health:read]                         │   │
+│  │    → Revenue, invoices, clients, projects                           │   │
+│  │                                                                       │   │
+│  │  GET /api/v1/clients  [clients:read]                                │   │
+│  │    → List of clients with filtering                                 │   │
+│  │                                                                       │   │
+│  │  POST /api/v1/invoices/draft  [invoices:write]                      │   │
+│  │    → Create draft invoice                                            │   │
+│  └───────────────────────────┬─────────────────────────────────────────┘   │
+└────────────────────────────────┼─────────────────────────────────────────────┘
+                                 │
+                                 │ Firebase Admin SDK
+                                 │
+┌────────────────────────────────▼─────────────────────────────────────────────┐
+│                           FIREBASE FIRESTORE                                 │
+│                                                                               │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐            │
+│  │   api_keys      │  │  tenants/{id}   │  │ tenants/{id}/   │            │
+│  │                 │  │                 │  │   invoices      │            │
+│  │ • hashedKey     │  │ • name          │  │                 │            │
+│  │ • scopes[]      │  │ • ownerId       │  │ • status        │            │
+│  │ • tenantId      │  │ • plan          │  │ • lineItems[]   │            │
+│  │ • isActive      │  │ • telemetry     │  │ • total         │            │
+│  │ • usageCount    │  │                 │  │                 │            │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘            │
+│                                                                               │
+│  ┌─────────────────┐  ┌─────────────────┐                                  │
+│  │ tenants/{id}/   │  │ tenants/{id}/   │                                  │
+│  │   clients       │  │   projects      │                                  │
+│  │                 │  │                 │                                  │
+│  │ • name          │  │ • name          │                                  │
+│  │ • email         │  │ • status        │                                  │
+│  │ • status        │  │ • clientId      │                                  │
+│  │ • company       │  │                 │                                  │
+│  └─────────────────┘  └─────────────────┘                                  │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                       DEEP LINK SYSTEM                                       │
+│                                                                               │
+│  External App → Deep Link URL                                                │
+│                                                                               │
+│  https://hustlestudio.app/link/invoice-builder                              │
+│    ?project=Unity&client=Northstar&hours=20&rate=75                         │
+│                                                                               │
+│          ↓                                                                    │
+│                                                                               │
+│  ┌──────────────────────────────────────┐                                   │
+│  │ InvoiceBuilderLink.jsx               │                                   │
+│  │  ✓ Parse query params                │                                   │
+│  │  ✓ Store in sessionStorage           │                                   │
+│  │  ✓ Show animated countdown            │                                   │
+│  │  ✓ Redirect to /crm/invoices          │                                   │
+│  └─────────────┬────────────────────────┘                                   │
+│                │                                                              │
+│                ▼                                                              │
+│  ┌──────────────────────────────────────┐                                   │
+│  │ InvoicesV2.jsx                       │                                   │
+│  │  ✓ Read sessionStorage                │                                   │
+│  │  ✓ Pre-fill form fields               │                                   │
+│  │  ✓ Clear sessionStorage               │                                   │
+│  │  ✓ Show success notification          │                                   │
+│  └──────────────────────────────────────┘                                   │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                      DEVELOPER SETTINGS UI                                   │
+│                   (/settings/developer)                                      │
+│                                                                               │
+│  ┌────────────────────────────────────────────────────────────────────┐     │
+│  │  API Key Management                                                │     │
+│  │                                                                     │     │
+│  │  ┌─────────────────────────────────────────────────────────────┐  │     │
+│  │  │  [+] Generate New Key                                        │  │     │
+│  │  └─────────────────────────────────────────────────────────────┘  │     │
+│  │                                                                     │     │
+│  │  Active Keys:                                                      │     │
+│  │  ┌─────────────────────────────────────────────────────────────┐  │     │
+│  │  │ Production API                              [🗑️ Delete]      │  │     │
+│  │  │ •••••••• abc12345                                            │  │     │
+│  │  │ Scopes: invoices:read, clients:read                          │  │     │
+│  │  │ Last used: Jan 5, 2026 • 1,234 requests                      │  │     │
+│  │  └─────────────────────────────────────────────────────────────┘  │     │
+│  └────────────────────────────────────────────────────────────────────┘     │
+│                                                                               │
+│  Generate Modal:                                                              │
+│  ┌────────────────────────────────────────────────────────────────────┐     │
+│  │  Key Name: [_________________________]                             │     │
+│  │                                                                     │     │
+│  │  Environment:  [🟢 Live]  [ Test]                                  │     │
+│  │                                                                     │     │
+│  │  Scopes:                                                            │     │
+│  │   ☑ invoices:read                                                 │     │
+│  │   ☑ invoices:write                                                │     │
+│  │   ☑ clients:read                                                  │     │
+│  │   ☐ clients:write                                                 │     │
+│  │   ☑ health:read                                                   │     │
+│  │                                                                     │     │
+│  │              [Cancel]  [Generate Key]                              │     │
+│  └────────────────────────────────────────────────────────────────────┘     │
+│                                                                               │
+│  After Generation (shows once):                                              │
+│  ┌────────────────────────────────────────────────────────────────────┐     │
+│  │  ✅ API Key Created                                                │     │
+│  │                                                                     │     │
+│  │  Copy this key now - you won't see it again!                       │     │
+│  │                                                                     │     │
+│  │  ┌─────────────────────────────────────────────┐                  │     │
+│  │  │ hs_live_a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6  📋│                  │     │
+│  │  └─────────────────────────────────────────────┘                  │     │
+│  │                                                                     │     │
+│  │                                            [Done]                   │     │
+│  └────────────────────────────────────────────────────────────────────┘     │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                          INTEGRATION FLOW                                    │
+│                                                                               │
+│  Step 1: Generate API Key                                                    │
+│  ────────────────────────                                                    │
+│  User → Settings → Developer → Generate Key                                 │
+│       → Select scopes → Copy key (hs_live_xxx)                              │
+│                                                                               │
+│  Step 2: Configure External App                                              │
+│  ────────────────────────────                                                │
+│  WorkspaceOS → Add API key to env vars                                      │
+│            → Initialize SDK: new HustleConnect(key)                          │
+│                                                                               │
+│  Step 3: Make API Requests                                                   │
+│  ───────────────────────                                                     │
+│  WorkspaceOS → Call hustle.getBusinessHealth()                              │
+│            → Display metrics in dashboard                                    │
+│            → Update every 5 minutes                                          │
+│                                                                               │
+│  Step 4: Create Invoice                                                      │
+│  ───────────────────────                                                     │
+│  WorkspaceOS → Project completed                                            │
+│            → Call hustle.createInvoiceDraft(data)                           │
+│            → Or generate deep link                                           │
+│            → User clicks → Opens Hustle with pre-filled form                │
+│                                                                               │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                            SECURITY LAYERS                                   ║
+╠══════════════════════════════════════════════════════════════════════════════╣
+║  1. API Key Hashing (SHA-256)                                               ║
+║     • Keys never stored in plain text                                        ║
+║     • Hash comparison for validation                                         ║
+║                                                                               ║
+║  2. Scope-Based Authorization                                                ║
+║     • Each key has specific permissions                                      ║
+║     • Middleware checks required scope                                       ║
+║                                                                               ║
+║  3. CORS Protection                                                          ║
+║     • Whitelist of allowed origins                                           ║
+║     • Preflight request handling                                             ║
+║                                                                               ║
+║  4. Per-Tenant Isolation                                                     ║
+║     • Keys tied to specific tenant                                           ║
+║     • Data access limited to tenant                                          ║
+║                                                                               ║
+║  5. Usage Monitoring                                                         ║
+║     • Track request count                                                    ║
+║     • Monitor last used timestamp                                            ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+
+AVAILABLE SCOPES:
+─────────────────
+• invoices:read   → View invoice data
+• invoices:write  → Create and update invoices
+• clients:read    → View client data
+• clients:write   → Create and update clients
+• health:read     → View business health metrics
+• projects:read   → View project data
+• projects:write  → Create and update projects
+```

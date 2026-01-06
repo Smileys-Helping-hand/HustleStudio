@@ -1,13 +1,22 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import logger from '../lib/logger.js';
 import { Link } from 'react-router-dom';
+import logger from '../lib/logger.js';
 import { motion } from 'framer-motion';
+import logger from '../lib/logger.js';
 import { getDocs, limit, orderBy, query } from 'firebase/firestore';
+import logger from '../lib/logger.js';
 import MetricCard from '../components/MetricCard.jsx';
+import logger from '../lib/logger.js';
 import PageHeader from '../components/common/PageHeader.jsx';
+import logger from '../lib/logger.js';
 import { toast } from 'react-hot-toast';
+import logger from '../lib/logger.js';
 import { useTenant } from '../context/TenantContext.jsx';
+import logger from '../lib/logger.js';
 import { tenantCollection } from '../lib/tenant.js';
 
+import logger from '../lib/logger.js';
 const Dashboard = () => {
   const [inventoryCount, setInventoryCount] = useState(0);
   const [teamCount, setTeamCount] = useState(0);
@@ -48,7 +57,7 @@ const Dashboard = () => {
           }))
         );
       } catch (error) {
-        console.warn('[Dashboard] metrics fallback', error);
+        logger.warn('[Dashboard] metrics fallback', error);
       }
     };
 

@@ -37,6 +37,58 @@ const InvoicesV2 = () => {
   const notify = useNotify();
   const { activeTenant } = useTenant();
 
+  // Check for pre-fill data from deep link
+  React.useEffect(() => {
+    const preFillData = sessionStorage.getItem('invoicePreFill');
+    if (preFillData) {
+      try {
+        const data = JSON.parse(preFillData);
+        
+        // Pre-fill client info
+        if (data.client || data.clientEmail) {
+          setClient(prev => ({
+            ...prev,
+            name: data.client || prev.name,
+            contact: data.clientEmail || prev.contact,
+          }));
+        }
+
+        // Pre-fill line items from deep link data
+        if (data.hours && data.rate) {
+          const description = data.description || data.project || 'Service hours';
+          setLineItems([{
+            description,
+            quantity: data.hours,
+            price: data.rate,
+          }]);
+        } else if (data.amount) {
+          const description = data.description || data.project || 'Service';
+          setLineItems([{
+            description,
+            quantity: 1,
+            price: data.amount,
+          }]);
+        }
+
+        // Pre-fill notes
+        if (data.notes) {
+          setNotes(data.notes);
+        }
+
+        // Clear the session storage after reading
+        sessionStorage.removeItem('invoicePreFill');
+        
+        notify({ 
+          type: 'success', 
+          title: 'Invoice Pre-filled', 
+          description: 'Form populated from external link' 
+        });
+      } catch (error) {
+        console.error('[Invoice] Failed to parse pre-fill data', error);
+      }
+    }
+  }, [notify]);
+
   // Auto-populate company details from tenant if available
   React.useEffect(() => {
     if (activeTenant) {

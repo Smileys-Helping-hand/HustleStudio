@@ -16,6 +16,12 @@ const ThemeSelector = () => {
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         onClick={() => setIsOpen(!isOpen)}
+        onKeyDown={(e) => {
+          if (e.key === 'Escape') setIsOpen(false);
+        }}
+        aria-label="Select theme"
+        aria-expanded={isOpen}
+        aria-haspopup="menu"
         className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/80 backdrop-blur-sm transition hover:border-white/20 hover:bg-white/10"
       >
         <FiDroplet className="w-4 h-4" />
@@ -40,6 +46,8 @@ const ThemeSelector = () => {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -10, scale: 0.95 }}
               transition={{ duration: 0.2 }}
+              role="menu"
+              aria-label="Theme selection menu"
               className="absolute right-0 top-full mt-2 z-50 w-80 rounded-2xl border border-white/10 bg-black/95 backdrop-blur-xl shadow-2xl overflow-hidden"
             >
               <div className="p-4 border-b border-white/10">
@@ -63,6 +71,9 @@ const ThemeSelector = () => {
                         setTheme(key);
                         setIsOpen(false);
                       }}
+                      role="menuitemradio"
+                      aria-checked={themeKey === key}
+                      aria-label={`${theme.name} theme. ${theme.description}`}
                       className={`w-full text-left p-3 rounded-xl border transition-all ${
                         themeKey === key
                           ? 'border-indigo-500 bg-indigo-500/10'

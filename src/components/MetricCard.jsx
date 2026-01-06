@@ -2,11 +2,13 @@ import PropTypes from 'prop-types';
 import { motion } from 'framer-motion';
 
 const MetricCard = ({ title, value, trend, label }) => (
-  <motion.div
+  <motion.article
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
     whileHover={{ scale: 1.02, y: -3 }}
     transition={{ duration: 0.3, type: "spring", stiffness: 300 }}
+    role="region"
+    aria-label={`${title || label} metric: ${value}`}
     className="group relative rounded-2xl border border-white/10 bg-gradient-to-br from-white/5 to-white/[0.02] p-6 shadow-xl backdrop-blur-sm overflow-hidden hover:border-indigo-400/40 hover:shadow-2xl hover:shadow-indigo-500/20"
   >
     {/* Animated gradient overlay */}
@@ -30,7 +32,7 @@ const MetricCard = ({ title, value, trend, label }) => (
         </div>
       )}
     </div>
-  </motion.div>
+  </motion.article>
 );
 
 MetricCard.propTypes = {

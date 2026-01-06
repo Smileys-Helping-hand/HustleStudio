@@ -5,6 +5,8 @@ import Navbar from './components/Navbar.jsx';
 import VersionFooter from './components/VersionFooter.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 import LoadingSpinner from './components/LoadingSpinner.jsx';
+import PerformanceMonitor from './components/PerformanceMonitor.jsx';
+import KeyboardShortcuts from './components/KeyboardShortcuts.jsx';
 import { useAuth } from './context/AuthContext.jsx';
 import IntroGate from './components/IntroGate.jsx';
 import DiagnosticsOverlay from './components/DiagnosticsOverlay.jsx';
@@ -46,6 +48,8 @@ const MarketingScheduler = lazy(() => import('./pages/MarketingScheduler.jsx'));
 const MarketingAnalytics = lazy(() => import('./pages/MarketingAnalytics.jsx'));
 const Leads = lazy(() => import('./pages/Leads.jsx'));
 const GrowthCoach = lazy(() => import('./pages/ai/GrowthCoach.jsx'));
+const DeveloperSettings = lazy(() => import('./pages/DeveloperSettings.jsx'));
+const InvoiceBuilderLink = lazy(() => import('./pages/links/InvoiceBuilderLink.jsx'));
 const MarketingTools = lazy(() => import('./pages/Tools/Marketing.jsx'));
 const SchedulerTools = lazy(() => import('./pages/Tools/Scheduler.jsx'));
 const Marketplace = lazy(() => import('./pages/Marketplace.jsx'));
@@ -117,6 +121,8 @@ const App = () => {
       <Suspense fallback={<SuspenseFallback />}>
         <Routes>
           <Route path="/login" element={user ? <Navigate to="/dashboard" replace /> : <Login />} />
+          {/* Deep Links - Public routes for external integration */}
+          <Route path="/link/invoice-builder" element={<InvoiceBuilderLink />} />
           <Route element={<ProtectedRoute />}>
             <Route element={<ProtectedLayout />}>
               <Route index element={<Dashboard />} />
@@ -162,6 +168,7 @@ const App = () => {
               <Route path="tools/scheduler" element={<SchedulerTools />} />
               <Route path="team" element={<Team />} />
               <Route path="settings" element={<Settings />} />
+              <Route path="settings/developer" element={<DeveloperSettings />} />
               <Route path="visuals" element={<Visuals />} />
               <Route path="monitor" element={<Monitor />} />
               <Route element={<ProtectedRoute roles={['owner', 'admin']} />}>
@@ -191,6 +198,8 @@ const App = () => {
         </div>
       )}
       <DiagnosticsOverlay />
+      <PerformanceMonitor />
+      <KeyboardShortcuts />
       {user && <GettingStartedGuide />}
     </>
   );

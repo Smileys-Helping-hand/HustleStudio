@@ -7,6 +7,7 @@ import { ASSETS } from '@/config/assets.js';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth, db } from '../lib/firebase';
 import { doc, setDoc } from 'firebase/firestore';
+import logger from '../lib/logger.js';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -43,7 +44,7 @@ const Login = () => {
       toast.success('Account created successfully!');
       navigate('/', { replace: true });
     } catch (error) {
-      console.error(error);
+      logger.error(error);
       if (error.code === 'auth/email-already-in-use') {
         toast.error('Email already in use');
       } else if (error.code === 'auth/weak-password') {
@@ -66,7 +67,7 @@ const Login = () => {
       await login(email, password);
       navigate('/', { replace: true });
     } catch (error) {
-      console.error(error);
+      logger.error(error);
     } finally {
       setIsLoading(false);
     }

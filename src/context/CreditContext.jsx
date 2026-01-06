@@ -86,7 +86,7 @@ export const CreditProvider = ({ children }) => {
         setLoading(false);
       },
       (error) => {
-        console.error('[Credits] Failed to read balance.', error);
+        logger.error('[Credits] Failed to read balance.', error);
         toast.error('Unable to load credit balance.');
         setLoading(false);
       }
@@ -172,7 +172,7 @@ export const CreditProvider = ({ children }) => {
           window.location.href = data.checkoutUrl;
         }
       } catch (error) {
-        console.error('[Credits] Checkout error.', error);
+        logger.error('[Credits] Checkout error.', error);
         toast.error('Unable to start checkout.');
       }
     },
