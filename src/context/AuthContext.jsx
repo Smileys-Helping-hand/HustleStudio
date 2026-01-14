@@ -4,16 +4,8 @@ import {
   signInWithEmailAndPassword,
   signOut as firebaseSignOut,
 } from 'firebase/auth';
-import {
-  collectionGroup,
-  doc,
-  getDoc,
-  getDocs,
-  query,
-  where,
-} from 'firebase/firestore';
 import PropTypes from 'prop-types';
-import { auth, db } from '../lib/firebase';
+import { auth } from '../lib/firebase';
 import { toast } from 'react-hot-toast';
 
 const AuthContext = createContext({
@@ -30,47 +22,37 @@ const AuthContext = createContext({
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [role, setRole] = useState(null);
+  const [role, setRole] = useState('staff');
   const [loading, setLoading] = useState(true);
   const [memberships, setMemberships] = useState([]);
-  const [offlineMode, setOfflineMode] = useState(false);
+  const [offlineMode] = useState(false);
 
-  const reportOffline = useCallback(() => {
-    console.warn('[Firestore] Connection issue detected — switching to offline mode.');
-    setOfflineMode(true);
+  const loadMemberships = useCallback(async (uid) => {
+    console.log('[AuthContext] loadMemberships called with uid:', uid);
+    if (!uid) {
+      console.log('[AuthContext] No uid provided, clearing memberships');
+      setMemberships([]);
+      return [];
+    }
+
+    try {
+      // TODO: Replace with API call to /api/v1/tenants?uid=
+      // For now, create a default membership
+      const defaultMembership = {
+        tenantId: 'default',
+        role: 'Owner',
+        uid,
+      };
+      
+      console.log('[AuthContext] Using default membership');
+      setMemberships([defaultMembership]);
+      return [defaultMembership];
+    } catch (error) {
+      console.error('[Auth] Failed to load tenant memberships.', error);
+      setMemberships([]);
+      return [];
+    }
   }, []);
-
-  const loadMemberships = useCallback(
-    async (uid) => {
-      console.log('[AuthContext] loadMemberships called with uid:', uid);
-      if (!uid) {
-        console.log('[AuthContext] No uid provided, clearing memberships');
-        setMemberships([]);
-        return [];
-      }
-      try {
-        const membershipsQuery = query(
-          collectionGroup(db, 'users'),
-          where('uid', '==', uid)
-        );
-        const snapshot = await getDocs(membershipsQuery);
-        console.log('[AuthContext] Found', snapshot.docs.length, 'membership documents');
-        const mapped = snapshot.docs.map((docSnapshot) => ({
-          tenantId: docSnapshot.ref.parent.parent?.id ?? docSnapshot.data().tenantId ?? 'default',
-          role: docSnapshot.data().role ?? 'viewer',
-          ...docSnapshot.data(),
-        }));
-        console.log('[AuthContext] Mapped memberships:', mapped);
-        setMemberships(mapped);
-        return mapped;
-      } catch (error) {
-        console.error('[Firestore] Failed to load tenant memberships.', error);
-        setMemberships([]);
-        return [];
-      }
-    },
-    []
-  );
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -78,33 +60,33 @@ export const AuthProvider = ({ children }) => {
         '[AuthState] Auth change detected.',
         firebaseUser ? firebaseUser.uid : 'signed out'
       );
+      
       if (!firebaseUser) {
         setUser(null);
-        setRole(null);
+        setRole('staff');
         setMemberships([]);
         setLoading(false);
         return;
       }
 
       try {
-        const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
-        await loadMemberships(firebaseUser.uid);
+        // Set user immediately
         setUser(firebaseUser);
-        setRole(userDoc.exists() ? (userDoc.data().role ?? 'staff') : 'staff');
-        setOfflineMode(false);
+        setRole('Owner'); // Default role for now
+        
+        // Load memberships
+        await loadMemberships(firebaseUser.uid);
       } catch (error) {
-        console.error('[Firestore] Failed to load user profile.', error);
-        toast.error('Profile is unavailable — using offline defaults.');
+        console.error('[Auth] Failed to initialize user.', error);
         setUser(firebaseUser);
         setRole('staff');
-        reportOffline();
       } finally {
         setLoading(false);
       }
     });
 
     return () => unsubscribe();
-  }, [loadMemberships, reportOffline]);
+  }, [loadMemberships]);
 
   const login = useCallback(
     async (email, password) => {
@@ -112,47 +94,53 @@ export const AuthProvider = ({ children }) => {
         setLoading(true);
         const credentials = await signInWithEmailAndPassword(auth, email, password);
         console.info('[AuthState] Login successful.', credentials.user.uid);
-        try {
-          const profile = await getDoc(doc(db, 'users', credentials.user.uid));
-          await loadMemberships(credentials.user.uid);
-          setRole(profile.exists() ? (profile.data().role ?? 'staff') : 'staff');
-          setOfflineMode(false);
-        } catch (profileError) {
-          console.error('[Firestore] Unable to load profile after login.', profileError);
-          toast.error('Profile unavailable — continuing in offline mode.');
-          setRole('staff');
-          reportOffline();
-        }
-        setUser(credentials.user);
-        toast.success('Welcome back to Hustle Studio!');
+        
+        setRole('Owner');
+        await loadMemberships(credentials.user.uid);
+        
+        toast.success('Signed in successfully');
       } catch (error) {
-        console.error('[AuthState] Login error.', error);
-        if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
+        console.error('[AuthState] Login failed:', error);
+        if (error.code === 'auth/invalid-credential') {
           toast.error('Invalid email or password');
+        } else if (error.code === 'auth/too-many-requests') {
+          toast.error('Too many attempts. Please try again later.');
         } else {
-          toast.error('Unable to log in right now');
+          toast.error('Failed to sign in');
         }
         throw error;
       } finally {
         setLoading(false);
       }
     },
-    [loadMemberships, reportOffline]
+    [loadMemberships]
   );
 
   const signOut = useCallback(async () => {
     try {
       await firebaseSignOut(auth);
-      console.info('[AuthState] User signed out.');
       setUser(null);
-      setRole(null);
+      setRole('staff');
       setMemberships([]);
+      toast.success('Signed out');
     } catch (error) {
-      console.error('[AuthState] Sign-out error.', error);
-      toast.error('Unable to sign out');
+      console.error('[AuthState] Sign out failed:', error);
+      toast.error('Failed to sign out');
       throw error;
     }
   }, []);
+
+  const refreshMemberships = useCallback(
+    async (uid) => {
+      const effectiveUid = uid || user?.uid;
+      if (!effectiveUid) {
+        console.log('[AuthContext] Cannot refresh memberships without uid');
+        return [];
+      }
+      return loadMemberships(effectiveUid);
+    },
+    [user, loadMemberships]
+  );
 
   const value = useMemo(
     () => ({
@@ -163,20 +151,10 @@ export const AuthProvider = ({ children }) => {
       offlineMode,
       login,
       signOut,
-      reportOffline,
-      refreshMemberships: loadMemberships,
+      reportOffline: () => {},
+      refreshMemberships,
     }),
-    [
-      user,
-      role,
-      memberships,
-      loading,
-      offlineMode,
-      reportOffline,
-      login,
-      signOut,
-      loadMemberships,
-    ]
+    [user, role, memberships, loading, offlineMode, login, signOut, refreshMemberships]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

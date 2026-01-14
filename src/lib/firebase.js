@@ -1,6 +1,5 @@
 import { initializeApp, getApps } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import { getEnvValue } from './env.js';
 
@@ -17,14 +16,17 @@ const firebaseConfig = {
 let app;
 try {
   app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
-  console.info('[FirebaseInit] Firebase app initialised.');
+  console.info('[FirebaseInit] Firebase app initialised (Auth only).');
 } catch (error) {
   console.error('[FirebaseInit] Failed to initialise Firebase.', error);
   throw error;
 }
 
 export const auth = getAuth(app);
-export const db = getFirestore(app);
 export const storage = getStorage(app);
+
+// Firestore has been removed - use API endpoints instead
+export const db = null;
+
 export { firebaseConfig };
 export default app;

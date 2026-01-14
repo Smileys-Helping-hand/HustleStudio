@@ -9,6 +9,36 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Tenant {
+  id              String   @id @default(uuid())
+  name            String
+  ownerId         String
+  accent          String   @default("#6366f1")
+  plan            String   @default("free")
+  telemetryEnabled Boolean @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relations
+  members         TenantMember[]
+  @@map("tenants")
+}
+
+model TenantMember {
+  id        String   @id @default(uuid())
+  tenantId  String
+  uid       String   // Firebase Auth UID
+  email     String
+  role      String   // Owner, Admin, Member
+  joinedAt  DateTime @default(now())
+  
+  // Relations
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  @@unique([tenantId, uid])
+  @@map("tenant_members")
+}
+
 model FaultCode {
   id          Int      @id @default(autoincrement())
   code        String   @unique
