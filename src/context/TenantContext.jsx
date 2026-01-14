@@ -24,12 +24,22 @@ const TenantContext = createContext({
   refreshTenants: async () => {},
   saveBranding: async () => {},
   updateTelemetryPreference: async () => {},
+  updateWorkspace: async () => {},
 });
 
 export const TenantProvider = ({ children }) => {
   const { user, memberships, refreshMemberships } = useAuth();
   const [tenantSummaries, setTenantSummaries] = useState([]);
-  const [activeTenantId, setActiveTenantId] = useState(null);
+  const [activeTenantId, setActiveTenantId] = useState(() => {
+    // Try to restore from localStorage
+    try {
+      const saved = localStorage.getItem('hustleStudio_activeTenant');
+      return saved || null;
+    } catch (error) {
+      logger.warn('[TenantContext] Failed to restore active tenant from localStorage:', error);
+      return null;
+    }
+  });
   const [loading, setLoading] = useState(true);
   const [presence, setPresence] = useState([]);
   const presenceCleanupRef = useRef(null);
@@ -81,10 +91,26 @@ export const TenantProvider = ({ children }) => {
       logger.log('[TenantContext] Mapped tenants:', mapped);
       setTenantSummaries(mapped);
       setActiveTenantId((current) => {
+        // Check if current tenant is valid
         if (current && mapped.some((tenant) => tenant.id === current)) {
           logger.log('[TenantContext] Keeping current active tenant:', current);
           return current;
         }
+        
+        // Try to restore from localStorage if current is not set or invalid
+        if (!current || !mapped.some((tenant) => tenant.id === current)) {
+          try {
+            const saved = localStorage.getItem('hustleStudio_activeTenant');
+            if (saved && mapped.some((tenant) => tenant.id === saved)) {
+              logger.log('[TenantContext] Restoring active tenant from localStorage:', saved);
+              return saved;
+            }
+          } catch (error) {
+            logger.warn('[TenantContext] Failed to restore from localStorage:', error);
+          }
+        }
+        
+        // Default to first tenant
         const newActive = mapped[0]?.id ?? null;
         logger.log('[TenantContext] Setting new active tenant:', newActive);
         return newActive;
@@ -104,6 +130,25 @@ export const TenantProvider = ({ children }) => {
   useEffect(() => {
     hydrateTenants().catch(() => {});
   }, [hydrateTenants]);
+
+  // Persist active tenant ID to localStorage
+  useEffect(() => {
+    if (activeTenantId) {
+      try {
+        localStorage.setItem('hustleStudio_activeTenant', activeTenantId);
+        logger.log('[TenantContext] Saved active tenant to localStorage:', activeTenantId);
+      } catch (error) {
+        logger.warn('[TenantContext] Failed to save active tenant to localStorage:', error);
+      }
+    } else {
+      try {
+        localStorage.removeItem('hustleStudio_activeTenant');
+        logger.log('[TenantContext] Cleared active tenant from localStorage');
+      } catch (error) {
+        logger.warn('[TenantContext] Failed to clear active tenant from localStorage:', error);
+      }
+    }
+  }, [activeTenantId]);
 
   useEffect(() => {
     if (!user) {
@@ -195,6 +240,32 @@ export const TenantProvider = ({ children }) => {
     [activeTenantId]
   );
 
+  const updateWorkspace = useCallback(
+    async (updates) => {
+      if (!activeTenantId) {
+        toast.error('Select a workspace first.');
+        return;
+      }
+      try {
+        await setDoc(
+          doc(db, 'tenants', activeTenantId),
+          {
+            ...updates,
+            updatedAt: serverTimestamp(),
+          },
+          { merge: true }
+        );
+        await hydrateTenants();
+        toast.success('Workspace updated');
+      } catch (error) {
+        logger.error('[Tenant] Failed to update workspace', error);
+        toast.error('Unable to update workspace.');
+        throw error;
+      }
+    },
+    [activeTenantId, hydrateTenants]
+  );
+
   const createTenant = useCallback(
     async ({ name, accent }) => {
       if (!user) {
@@ -236,14 +307,81 @@ export const TenantProvider = ({ children }) => {
           logger.warn('[TenantContext] Failed to log event:', logError);
         }
         
-        // Refresh memberships and tenants
-        await refreshMemberships(user.uid);
-        logger.log('[TenantContext] Memberships refreshed');
+        // Directly verify the documents were created before proceeding
+        logger.log('[TenantContext] Verifying workspace creation...');
+        let verified = false;
+        let verifyRetries = 5;
         
-        await hydrateTenants();
-        logger.log('[TenantContext] Tenants hydrated');
+        while (verifyRetries > 0 && !verified) {
+          try {
+            const tenantDoc = await getDoc(tenantRef);
+            const memberDoc = await getDoc(memberRef);
+            
+            if (tenantDoc.exists() && memberDoc.exists()) {
+              verified = true;
+              logger.log('[TenantContext] Workspace documents verified');
+            } else {
+              logger.warn('[TenantContext] Documents not yet available, waiting...');
+              await new Promise(resolve => setTimeout(resolve, 300));
+              verifyRetries--;
+            }
+          } catch (verifyError) {
+            logger.warn('[TenantContext] Verification attempt failed:', verifyError);
+            verifyRetries--;
+            if (verifyRetries > 0) {
+              await new Promise(resolve => setTimeout(resolve, 300));
+            }
+          }
+        }
         
-        // Switch to new tenant after refresh
+        if (!verified) {
+          logger.error('[TenantContext] Could not verify workspace creation');
+          throw new Error('Workspace creation could not be verified');
+        }
+        
+        // Retry logic to load the new workspace
+        let retries = 5;
+        let workspaceLoaded = false;
+        
+        while (retries > 0 && !workspaceLoaded) {
+          logger.log('[TenantContext] Loading workspace, attempt:', 6 - retries);
+          
+          // Refresh memberships
+          const loadedMemberships = await refreshMemberships(user.uid);
+          logger.log('[TenantContext] Memberships loaded:', loadedMemberships.length);
+          
+          // Small delay to allow state update
+          await new Promise(resolve => setTimeout(resolve, 200));
+          
+          // Check if the new tenant is in memberships
+          if (loadedMemberships.some(m => m.tenantId === tenantRef.id)) {
+            // Force hydrate tenants
+            const tenants = await hydrateTenants();
+            logger.log('[TenantContext] Tenants hydrated:', tenants.length);
+            
+            if (tenants.some(t => t.id === tenantRef.id)) {
+              workspaceLoaded = true;
+              logger.log('[TenantContext] New workspace successfully loaded');
+              break;
+            }
+          }
+          
+          logger.warn('[TenantContext] Workspace not yet loaded, retrying...');
+          retries--;
+          if (retries > 0) {
+            await new Promise(resolve => setTimeout(resolve, 500));
+          }
+        }
+        
+        if (!workspaceLoaded) {
+          logger.error('[TenantContext] Failed to load new workspace after all retries');
+          toast.warning('Workspace created! Refreshing to load it...');
+          // Force a page reload as a fallback
+          window.location.reload();
+          return tenantRef.id;
+        }
+        
+        // Switch to new tenant
         setActiveTenantId(tenantRef.id);
         logger.log('[TenantContext] Switched to new tenant:', tenantRef.id);
         
@@ -281,6 +419,7 @@ export const TenantProvider = ({ children }) => {
       brand,
       saveBranding,
       updateTelemetryPreference,
+      updateWorkspace,
     };
   }, [
     tenantSummaries,
@@ -293,6 +432,7 @@ export const TenantProvider = ({ children }) => {
     refreshTenants,
     saveBranding,
     updateTelemetryPreference,
+    updateWorkspace,
   ]);
 
   return <TenantContext.Provider value={value}>{children}</TenantContext.Provider>;

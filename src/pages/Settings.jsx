@@ -14,9 +14,10 @@ export default function Settings() {
   const { user, role } = useAuth();
   const { themeKey, setTheme, cycleTheme } = useTheme();
   const themeOptions = Object.entries(themes);
-  const { activeTenant, activeTenantId, activeMembership, updateTelemetryPreference } = useTenant();
+  const { activeTenant, activeTenantId, activeMembership, updateTelemetryPreference, updateWorkspace } = useTenant();
   const [telemetryEnabled, setTelemetryEnabled] = useState(activeTenant?.telemetryEnabled ?? true);
   const [isSavingTelemetry, setIsSavingTelemetry] = useState(false);
+  const [isSavingWorkspace, setIsSavingWorkspace] = useState(false);
   const navigate = useNavigate();
   
   // Workspace settings
@@ -155,6 +156,26 @@ export default function Settings() {
     // TODO: Implement data export
   };
 
+  const handleSaveWorkspace = async () => {
+    if (!activeTenantId) {
+      toast.error('Select a workspace first.');
+      return;
+    }
+    if (!workspaceName.trim()) {
+      toast.error('Workspace name is required.');
+      return;
+    }
+    try {
+      setIsSavingWorkspace(true);
+      await updateWorkspace({ name: workspaceName.trim() });
+    } catch (error) {
+      console.error('[Settings] Failed to save workspace name', error);
+      toast.error('Failed to save workspace settings');
+    } finally {
+      setIsSavingWorkspace(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0e0e18] to-[#1b1830] px-6 pb-24 pt-8 text-white sm:px-10 lg:px-12">
       <div className="mx-auto max-w-5xl space-y-8">
@@ -181,6 +202,39 @@ export default function Settings() {
               <p className="text-xs font-medium uppercase tracking-wider text-white/50">Role</p>
               <p className="mt-2 text-lg capitalize">{role}</p>
             </div>
+          </div>
+        </motion.section>
+
+        {/* Workspace Settings */}
+        <motion.section
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+          className="rounded-2xl border border-white/10 bg-white/5 p-6 shadow-lg backdrop-blur"
+        >
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold">Workspace</h2>
+            <button
+              onClick={handleSaveWorkspace}
+              disabled={isSavingWorkspace || !workspaceName.trim() || workspaceName === activeTenant?.name}
+              className="flex items-center gap-2 rounded-lg bg-indigo-500 px-5 py-2.5 font-medium transition hover:bg-indigo-600 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <FiSave size={16} />
+              {isSavingWorkspace ? 'Saving...' : 'Save Changes'}
+            </button>
+          </div>
+          <div className="mt-4">
+            <label htmlFor="workspace-name" className="block text-sm font-medium text-white/80">
+              Workspace Name
+            </label>
+            <input
+              id="workspace-name"
+              type="text"
+              value={workspaceName}
+              onChange={(e) => setWorkspaceName(e.target.value)}
+              placeholder="Enter workspace name..."
+              className="mt-2 w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2.5 text-white placeholder-white/40 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-400/20"
+            />
           </div>
         </motion.section>
 
