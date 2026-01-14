@@ -4,8 +4,6 @@ import { FiPlus, FiEdit2, FiTrash2, FiCheck, FiX, FiAlertCircle } from 'react-ic
 import PageHeader from '../components/common/PageHeader.jsx';
 import EmptyState from '../components/EmptyState.jsx';
 import { useTenant } from '../context/TenantContext.jsx';
-import { collection, doc, setDoc, deleteDoc, serverTimestamp, onSnapshot, query, orderBy } from 'firebase/firestore';
-import { db } from '../lib/firebase.js';
 import { toast } from 'react-hot-toast';
 
 const Projects = () => {
@@ -25,7 +23,10 @@ const Projects = () => {
 
   const statusOptions = ['Planning', 'In Progress', 'Review', 'Completed', 'Backlog'];
 
-  // Load projects from Firestore
+  // Get storage key for current tenant
+  const getStorageKey = () => `hustleStudio_projects_${activeTenantId || 'default'}`;
+
+  // Load projects from localStorage
   useEffect(() => {
     if (!activeTenantId) {
       setLoading(false);
@@ -36,30 +37,18 @@ const Projects = () => {
     setError(null);
 
     try {
-      const projectsRef = collection(db, 'tenants', activeTenantId, 'projects');
-      const q = query(projectsRef, orderBy('createdAt', 'desc'));
-
-      const unsubscribe = onSnapshot(
-        q,
-        (snapshot) => {
-          const projectsData = snapshot.docs.map((doc) => ({
-            id: doc.id,
-            ...doc.data(),
-          }));
-          setProjects(projectsData);
-          setLoading(false);
-        },
-        (err) => {
-          console.error('[Projects] Failed to load projects:', err);
-          setError('Failed to load projects');
-          setLoading(false);
-        }
-      );
-
-      return () => unsubscribe();
+      const storageKey = getStorageKey();
+      const stored = localStorage.getItem(storageKey);
+      const projectsData = stored ? JSON.parse(stored) : [];
+      
+      // Sort by creation date descending
+      projectsData.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      
+      setProjects(projectsData);
+      setLoading(false);
     } catch (err) {
-      console.error('[Projects] Setup failed:', err);
-      setError('Failed to initialize projects');
+      console.error('[Projects] Failed to load projects:', err);
+      setError('Failed to load projects');
       setLoading(false);
     }
   }, [activeTenantId]);
@@ -94,7 +83,10 @@ const Projects = () => {
     }
 
     try {
-      await deleteDoc(doc(db, 'tenants', activeTenantId, 'projects', projectId));
+      const storageKey = getStorageKey();
+      const updatedProjects = projects.filter(p => p.id !== projectId);
+      localStorage.setItem(storageKey, JSON.stringify(updatedProjects));
+      setProjects(updatedProjects);
       toast.success('Project deleted');
     } catch (error) {
       console.error('[Projects] Delete failed', error);
@@ -118,29 +110,41 @@ const Projects = () => {
     setSubmitting(true);
 
     try {
+      const storageKey = getStorageKey();
+      const now = new Date().toISOString();
+      
       if (editingProject) {
         // Update existing
-        await setDoc(doc(db, 'tenants', activeTenantId, 'projects', editingProject.id), {
-          title: formData.title.trim(),
-          description: formData.description.trim(),
-          status: formData.status,
-          dueDate: formData.dueDate || null,
-          updatedAt: serverTimestamp(),
-        }, { merge: true });
-        
+        const updatedProjects = projects.map(p => 
+          p.id === editingProject.id 
+            ? {
+                ...p,
+                title: formData.title.trim(),
+                description: formData.description.trim(),
+                status: formData.status,
+                dueDate: formData.dueDate || null,
+                updatedAt: now,
+              }
+            : p
+        );
+        localStorage.setItem(storageKey, JSON.stringify(updatedProjects));
+        setProjects(updatedProjects);
         toast.success('Project updated');
       } else {
         // Create new
-        const newProjectRef = doc(collection(db, 'tenants', activeTenantId, 'projects'));
-        await setDoc(newProjectRef, {
+        const newProject = {
+          id: `project_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
           title: formData.title.trim(),
           description: formData.description.trim(),
           status: formData.status,
           dueDate: formData.dueDate || null,
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-        });
+          createdAt: now,
+          updatedAt: now,
+        };
         
+        const updatedProjects = [newProject, ...projects];
+        localStorage.setItem(storageKey, JSON.stringify(updatedProjects));
+        setProjects(updatedProjects);
         toast.success('Project created');
       }
       
