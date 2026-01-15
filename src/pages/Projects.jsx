@@ -69,7 +69,7 @@ const Projects = () => {
       title: project.title,
       description: project.description,
       status: project.status,
-      dueDate: project.dueDate,
+      dueDate: project.dueDate || '',
     });
     setShowModal(true);
   };
@@ -281,6 +281,7 @@ const Projects = () => {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               className="relative z-10 w-full max-w-lg rounded-2xl border border-white/10 bg-gradient-to-br from-[#1a1a2e] to-[#16213e] p-8 shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
             >
               <div className="mb-6">
                 <h2 className="text-2xl font-bold text-white">
@@ -342,7 +343,7 @@ const Projects = () => {
                     <input
                       id="project-duedate"
                       type="date"
-                      value={formData.dueDate}
+                      value={formData.dueDate || ''}
                       onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
                       className="mt-2 w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-400/20"
                       disabled={submitting}

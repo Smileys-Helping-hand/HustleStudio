@@ -75,8 +75,8 @@ const Login = () => {
 
   return (
     <div
-      className="relative flex min-h-screen items-center justify-center bg-cover bg-center px-4 overflow-hidden"
-      style={{ backgroundImage: `url(${ASSETS.backgroundLogin})` }}
+      className="relative flex min-h-screen items-center justify-center bg-gradient-to-br from-[#0e0e18] to-[#1b1830] px-4 overflow-hidden"
+      style={ASSETS.backgroundLogin ? { backgroundImage: `url(${ASSETS.backgroundLogin})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}
     >
       {/* Animated gradient overlays */}
       <motion.div
