@@ -5,16 +5,16 @@ import { motion } from 'framer-motion';
 import PageHeader from '../../components/common/PageHeader.jsx';
 import { useNotify } from '../../context/NotificationContext.jsx';
 
-const defaultLineItem = { description: 'Service retainer', quantity: 1, price: 850 };
+const defaultLineItem = { description: '', quantity: 1, price: 0 };
 
 const Invoices = () => {
   const [client, setClient] = useState({
-    name: 'Northstar Agency',
-    contact: 'finance@northstar.agency',
-    address: 'Cape Town, South Africa',
+    name: '',
+    contact: '',
+    address: '',
   });
   const [lineItems, setLineItems] = useState([defaultLineItem]);
-  const [notes, setNotes] = useState('Payment due within 7 days. Thank you for partnering with Hustle Studio.');
+  const [notes, setNotes] = useState('Payment due within 7 days. Thank you for partnering with us.');
   const notify = useNotify();
   const [generating, setGenerating] = useState(false);
 

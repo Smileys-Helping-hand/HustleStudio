@@ -5,13 +5,16 @@ import PageHeader from '../../components/common/PageHeader.jsx';
 import { useNotify } from '../../context/NotificationContext.jsx';
 import { useTenant } from '../../context/TenantContext.jsx';
 
-const defaultLineItem = { description: 'Service retainer', quantity: 1, price: 850 };
+const defaultLineItem = { description: '', quantity: 1, price: 0 };
 
 const InvoicesV2 = () => {
+  const notify = useNotify();
+  const { activeTenant } = useTenant();
+  
   const [client, setClient] = useState({
-    name: 'Northstar Agency',
-    contact: 'finance@northstar.agency',
-    address: 'Cape Town, South Africa',
+    name: '',
+    contact: '',
+    address: '',
   });
   const [lineItems, setLineItems] = useState([defaultLineItem]);
   const [notes, setNotes] = useState('Payment due within 7 days. Thank you for partnering with us.');
@@ -24,18 +27,15 @@ const InvoicesV2 = () => {
     secondaryColor: '#8b5cf6',
     logo: null,
     logoPreview: null,
-    companyName: 'Hustle Studio',
-    companyAddress: '123 Business Street\nCape Town, 8000\nSouth Africa',
-    companyEmail: 'billing@hustlestudio.co.za',
-    companyPhone: '+27 21 123 4567',
+    companyName: activeTenant?.name || '',
+    companyAddress: '',
+    companyEmail: '',
+    companyPhone: '',
     template: 'modern', // modern, classic, minimal
     taxRate: 15,
     currency: 'R',
     invoiceNumber: `INV-${Date.now().toString().slice(-6)}`,
   });
-
-  const notify = useNotify();
-  const { activeTenant } = useTenant();
 
   // Check for pre-fill data from deep link
   React.useEffect(() => {
