@@ -7,7 +7,6 @@ const defaultHealth = {
   ai: false,
   stripe: false,
   storage: false,
-  cvGenerator: false,
   uptime: [],
 };
 
@@ -50,7 +49,7 @@ const SystemHealth = () => {
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <h1 className="text-3xl font-semibold text-white">System health</h1>
-          <p className="text-white/60">Monitor integrations and uptime across Firebase, AI, Stripe, and CV services.</p>
+          <p className="text-white/60">Monitor integrations and uptime across Firebase, AI, and Stripe.</p>
         </div>
         <button
           type="button"
@@ -64,7 +63,7 @@ const SystemHealth = () => {
       {loading && <p className="text-white/60">Checking services…</p>}
       {error && <p className="text-red-400">Unable to refresh health: {error.message}</p>}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
@@ -96,14 +95,6 @@ const SystemHealth = () => {
         >
           <p className="text-xs uppercase tracking-widest text-white/50">Storage</p>
           <p className="text-2xl font-semibold text-white">{health.storage ? 'Online' : 'Offline'}</p>
-        </motion.div>
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          className={`rounded-3xl border ${health.cvGenerator ? 'border-olive/60 bg-olive/10' : 'border-red-500/40 bg-red-500/10'} p-6`}
-        >
-          <p className="text-xs uppercase tracking-widest text-white/50">CV Generator</p>
-          <p className="text-2xl font-semibold text-white">{health.cvGenerator ? 'Online' : 'Offline'}</p>
         </motion.div>
       </div>
 

@@ -16,7 +16,8 @@ import { getBooleanEnv } from './lib/env.js';
 const Dashboard = lazy(() => import('./pages/Dashboard.jsx'));
 const Inventory = lazy(() => import('./pages/Inventory.jsx'));
 const Reports = lazy(() => import('./pages/Reports.jsx'));
-const CVGenerator = lazy(() => import('./pages/CVGenerator.jsx'));
+const DataExtraction = lazy(() => import('./pages/DataExtraction.jsx'));
+const Customers = lazy(() => import('./pages/Customers.jsx'));
 const Team = lazy(() => import('./pages/Team.jsx'));
 const Settings = lazy(() => import('./pages/Settings.jsx'));
 const Login = lazy(() => import('./pages/Login.jsx'));
@@ -144,7 +145,8 @@ const App = () => {
               </Route>
               <Route path="inventory" element={<Inventory />} />
               <Route path="reports" element={<Reports />} />
-              <Route path="cv-generator" element={<CVGenerator />} />
+              <Route path="data-extraction" element={<DataExtraction />} />
+              <Route path="customers" element={<Customers />} />
               <Route path="analytics" element={<Analytics />} />
               <Route path="analytics/cloud" element={<AnalyticsCloud />} />
               <Route path="analytics/forecasts" element={<Forecasts />} />

@@ -300,7 +300,7 @@ const Candidates = () => {
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <h1 className="text-3xl font-semibold text-white">Candidate workspace</h1>
-          <p className="text-white/60">Manage inbound applicants, track their status, and generate AI-powered CVs.</p>
+          <p className="text-white/60">Manage inbound applicants and track their status.</p>
         </div>
         {canManage && (
           <button
@@ -308,7 +308,7 @@ const Candidates = () => {
             onClick={() => setShowUpload(true)}
             className="rounded-full bg-gold px-5 py-2 text-sm font-semibold text-black shadow-lg hover:bg-brand-600"
           >
-            Upload CV
+            Upload resume
           </button>
         )}
       </div>
@@ -333,13 +333,7 @@ const Candidates = () => {
             </option>
           ))}
         </select>
-        <button
-          type="button"
-          onClick={() => navigate('/cv-generator')}
-          className="rounded-2xl border border-gold/30 px-4 py-3 text-sm font-semibold text-gold hover:bg-gold/10"
-        >
-          Launch CV Generator
-        </button>
+        <div />
       </div>
 
       <div className="space-y-4">
@@ -405,12 +399,6 @@ const Candidates = () => {
                     className="rounded-full border border-gold/30 px-4 py-2 text-sm font-semibold text-gold hover:bg-gold/10"
                   >
                     View profile
-                  </Link>
-                  <Link
-                    to={`/cv-generator?candidateId=${candidate.id}`}
-                    className="rounded-full border border-white/10 px-4 py-2 text-sm text-white/80 hover:text-white"
-                  >
-                    Generate CV
                   </Link>
                   {canManage && (
                     <button

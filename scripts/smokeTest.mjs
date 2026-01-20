@@ -2,7 +2,7 @@ import puppeteer from 'puppeteer';
 
 const PORT = process.env.PREVIEW_PORT || 4173;
 const BASE = `http://localhost:${PORT}`;
-const PAGES = ['/', '/dashboard', '/inventory', '/reports', '/cv-generator'];
+const PAGES = ['/', '/dashboard', '/inventory', '/reports'];
 
 async function run() {
   const browser = await puppeteer.launch({ args: ['--no-sandbox', '--disable-setuid-sandbox'] });

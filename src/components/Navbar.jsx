@@ -55,6 +55,8 @@ export default function Navbar() {
       { to: '/hustles', icon: <FiBriefcase />, label: 'My Hustles', section: 'projects' },
       { to: '/finance', icon: <FiBriefcase />, label: 'Finance', section: 'finance' },
       { to: '/crm', icon: <FiGrid />, label: 'CRM', section: 'crm', matches: ['/crm'] },
+      { to: '/customers', icon: <FiGrid />, label: 'Customers', section: 'customers' },
+      { to: '/data-extraction', icon: <FiTool />, label: 'Document Scanner', section: 'tools' },
       { to: '/marketing/lab', icon: <FiTrendingUp />, label: 'Marketing', section: 'marketing', matches: ['/marketing'] },
       { to: '/marketing/scheduler', icon: <FiTool />, label: 'Scheduler', section: 'marketing', matches: ['/marketing/scheduler'] },
       { to: '/analytics', icon: <FiActivity />, label: 'Analytics', section: 'analytics' },

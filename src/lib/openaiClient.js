@@ -1,4 +1,5 @@
 import { logAIUsage } from './aiLogger.js';
+import { retryAICall } from './retryHelper.js';
 
 const resolveEnvValue = (key) => {
   if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env[key]) {
@@ -61,21 +62,23 @@ export const sendChatCompletion = async ({
     throw new Error('OpenAI API key is not configured.');
   }
 
-  const response = await fetch(OPENAI_API_URL, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model,
-      messages,
-      temperature,
-    }),
-    signal,
-  });
-
-  const payload = await parseResponse(response);
+  // Make API call with retry logic
+  const payload = await retryAICall(async () => {
+    const response = await fetch(OPENAI_API_URL, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model,
+        messages,
+        temperature,
+      }),
+      signal,
+    });
+    return parseResponse(response);
+  }, 'OpenAI');
 
   let auditId = null;
 

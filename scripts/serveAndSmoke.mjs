@@ -5,7 +5,7 @@ import puppeteer from 'puppeteer';
 
 const PORT = process.env.PREVIEW_PORT || 4173;
 const DIST = path.resolve(process.cwd(), 'dist');
-const PAGES = ['/', '/dashboard', '/inventory', '/reports', '/cv-generator'];
+const PAGES = ['/', '/dashboard', '/inventory', '/reports'];
 
 function contentType(filePath) {
   const ext = path.extname(filePath).toLowerCase();

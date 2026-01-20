@@ -1,168 +1,430 @@
-import { useEffect, useMemo, useState } from 'react';
-import { doc, getDoc } from 'firebase/firestore';
-import { buildTenantReport } from '../../lib/reportOrchestrator.js';
+import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { 
+  FiBarChart2, FiTrendingUp, FiDollarSign, FiUsers,
+  FiDownload, FiRefreshCw, FiFileText, FiTarget
+} from 'react-icons/fi';
+import { toast } from 'react-hot-toast';
 import PageHeader from '../../components/common/PageHeader.jsx';
-import { useAnalytics } from '../../hooks/useAnalytics.js';
+import { useAuth } from '../../context/AuthContext.jsx';
 import { useTenant } from '../../context/TenantContext.jsx';
+import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../../lib/firebase.js';
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar } from 'recharts';
+
+const StatCard = ({ title, value, change, icon: Icon, trend }) => (
+  <motion.div
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    className="rounded-2xl border border-white/10 bg-gradient-to-br from-white/5 to-white/[0.02] p-6"
+  >
+    <div className="flex items-start justify-between">
+      <div className="flex-1">
+        <p className="text-sm text-white/60">{title}</p>
+        <p className="text-3xl font-bold text-white mt-2">{value}</p>
+        {change && (
+          <div className={`flex items-center gap-1 mt-2 text-sm ${trend === 'up' ? 'text-green-400' : 'text-red-400'}`}>
+            <FiTrendingUp className={trend === 'down' ? 'rotate-180' : ''} />
+            <span>{change}</span>
+          </div>
+        )}
+      </div>
+      <div className="p-3 rounded-xl bg-indigo-500/20">
+        <Icon className="text-2xl text-indigo-400" />
+      </div>
+    </div>
+  </motion.div>
+);
 
 export default function BIReports() {
-  const [loading, setLoading] = useState(false);
-  const [report, setReport] = useState(null);
-  const [error, setError] = useState('');
-  const [benchmarks, setBenchmarks] = useState({ avgSales: 0, avgMargin: 0, avgGrowth: 0 });
-  const [benchmarksLoading, setBenchmarksLoading] = useState(true);
+  const { user } = useAuth();
   const { activeTenantId } = useTenant();
-  const { metrics, loading: metricsLoading, refresh } = useAnalytics();
+  const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
+  const [reportPeriod, setReportPeriod] = useState('monthly');
+  
+  const [metrics, setMetrics] = useState({
+    totalRevenue: 0,
+    totalCustomers: 0,
+    totalDocuments: 0,
+    averageOrderValue: 0,
+    revenueGrowth: 0,
+    customerGrowth: 0,
+  });
+
+  const [revenueData, setRevenueData] = useState([]);
+  const [customerData, setCustomerData] = useState([]);
+  const [documentTypeData, setDocumentTypeData] = useState([]);
 
   useEffect(() => {
-    let cancelled = false;
-    const loadBenchmarks = async () => {
-      try {
-        const summaryRef = doc(db, 'analytics', 'globalBenchmarks');
-        const snapshot = await getDoc(summaryRef);
-        if (!snapshot.exists()) {
-          if (!cancelled) {
-            setBenchmarks({ avgSales: 11000, avgMargin: 0.33, avgGrowth: 0.1 });
-          }
-          return;
-        }
-        const data = snapshot.data() ?? {};
-        if (!cancelled) {
-          setBenchmarks({
-            avgSales: Number(data.avgSales ?? 0),
-            avgMargin: Number(data.avgMargin ?? 0),
-            avgGrowth: Number(data.avgGrowth ?? 0),
-          });
-        }
-      } catch (err) {
-        console.warn('[BIReports] Falling back to default benchmarks.', err);
-        if (!cancelled) {
-          setBenchmarks({ avgSales: 11000, avgMargin: 0.33, avgGrowth: 0.1 });
-        }
-      } finally {
-        if (!cancelled) {
-          setBenchmarksLoading(false);
-        }
-      }
-    };
+    loadBIData();
+  }, [activeTenantId, reportPeriod]);
 
-    loadBenchmarks().catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const loadBIData = async () => {
+    if (!activeTenantId) return;
 
-  const preparedMetrics = useMemo(() => {
-    if (!metrics?.sales && !metrics?.usage && !metrics?.team) {
-      return null;
-    }
-
-    const sales = metrics?.sales ?? {};
-    const usage = metrics?.usage ?? {};
-    const team = metrics?.team ?? {};
-
-    return {
-      sales: {
-        revenue: Number(sales.totalRevenue ?? 0),
-        averageOrder: Number(sales.averageOrder ?? 0),
-        transactionCount: Number(sales.salesCount ?? 0),
-      },
-      ai: {
-        totalCredits: Number(usage.totalCredits ?? 0),
-        totalTokens: Number(usage.totalTokens ?? 0),
-      },
-      team: {
-        members: Number(team.totalMembers ?? 0),
-      },
-    };
-  }, [metrics]);
-
-  const handleGenerate = async () => {
-    if (!activeTenantId) {
-      setError('Select or create a workspace to generate a report.');
-      return;
-    }
-    if (!preparedMetrics) {
-      setError('Metrics are still loading — try again in a moment.');
-      if (!metricsLoading) {
-        refresh().catch(() => {});
-      }
-      return;
-    }
     setLoading(true);
-    setError('');
     try {
-      const revenue = preparedMetrics.sales.revenue;
-      const averageOrder = Number(metrics?.sales?.averageOrder ?? 0);
-      const growth = benchmarks.avgSales > 0 ? revenue / benchmarks.avgSales - 1 : 0;
-      const margin = revenue > 0 && averageOrder > 0 ? averageOrder / revenue : benchmarks.avgMargin;
-      const reportPayload = {
-        ...preparedMetrics,
-        growth,
-        margin,
-      };
-      const result = await buildTenantReport(activeTenantId, reportPayload, benchmarks);
-      setReport(result);
-    } catch (err) {
-      setError(err.message ?? 'Unable to generate report');
-      setReport(null);
+      const now = new Date();
+      const periodDays = reportPeriod === 'weekly' ? 7 : reportPeriod === 'monthly' ? 30 : 365;
+      const startDate = new Date(now.getTime() - periodDays * 24 * 60 * 60 * 1000);
+      const previousPeriodStart = new Date(startDate.getTime() - periodDays * 24 * 60 * 60 * 1000);
+
+      const customersQuery = query(
+        collection(db, 'tenants', activeTenantId, 'customers')
+      );
+      const customersSnapshot = await getDocs(customersQuery);
+      const customers = customersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+      const extractionsQuery = query(
+        collection(db, 'documentExtractions'),
+        where('tenantId', '==', activeTenantId)
+      );
+      const extractionsSnapshot = await getDocs(extractionsQuery);
+      const extractions = extractionsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+      const periodExtractions = extractions.filter((extraction) => {
+        const extractedAt = extraction.extractedAt?.toDate?.() || new Date(extraction.extractedAt);
+        return extractedAt >= startDate;
+      });
+
+      const previousPeriodExtractions = extractions.filter((extraction) => {
+        const extractedAt = extraction.extractedAt?.toDate?.() || new Date(extraction.extractedAt);
+        return extractedAt >= previousPeriodStart && extractedAt < startDate;
+      });
+
+      const calculateRevenue = (items) =>
+        items.reduce((sum, extraction) => {
+          const type = extraction.documentType;
+          if (type !== 'invoice' && type !== 'receipt') return sum;
+          const total = parseFloat(extraction.extractedData?.total);
+          return sum + (Number.isFinite(total) ? total : 0);
+        }, 0);
+
+      const periodRevenue = calculateRevenue(periodExtractions);
+      const previousRevenue = calculateRevenue(previousPeriodExtractions);
+
+      const periodInvoices = periodExtractions.filter((e) => e.documentType === 'invoice').length;
+      const averageOrderValue = periodInvoices > 0 ? periodRevenue / periodInvoices : 0;
+
+      const revenueGrowth = previousRevenue > 0
+        ? ((periodRevenue - previousRevenue) / previousRevenue) * 100
+        : periodRevenue > 0
+          ? 100
+          : 0;
+      const recentCustomers = customers.filter(c => {
+        const createdAt = c.createdAt?.toDate?.() || new Date(c.createdAt);
+        return createdAt >= startDate;
+      });
+      const previousCustomers = customers.filter(c => {
+        const createdAt = c.createdAt?.toDate?.() || new Date(c.createdAt);
+        return createdAt >= previousPeriodStart && createdAt < startDate;
+      });
+
+      const customerGrowth = previousCustomers.length > 0
+        ? ((recentCustomers.length - previousCustomers.length) / previousCustomers.length) * 100
+        : recentCustomers.length > 0
+          ? 100
+          : 0;
+
+      setMetrics({
+        totalRevenue: periodRevenue,
+        totalCustomers: customers.length,
+        totalDocuments: periodExtractions.length,
+        averageOrderValue,
+        revenueGrowth: revenueGrowth.toFixed(1),
+        customerGrowth: customerGrowth.toFixed(1),
+      });
+
+      generateChartData(periodExtractions, customers, startDate);
+    } catch (error) {
+      console.error('[BIReports] Failed to load data:', error);
+      toast.error('Failed to load BI data');
     } finally {
       setLoading(false);
     }
   };
 
+  const generateChartData = (extractions, customers, startDate) => {
+    const toDayKey = (date) => {
+      const d = new Date(date);
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}`;
+    };
+
+    const formatShort = (dayKey) => {
+      const [yyyy, mm, dd] = dayKey.split('-').map((part) => Number(part));
+      const d = new Date(yyyy, mm - 1, dd);
+      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    };
+
+    const revenueByDay = {};
+    extractions.forEach((extraction) => {
+      if (extraction.documentType === 'invoice' || extraction.documentType === 'receipt') {
+        const date = extraction.extractedAt?.toDate?.() || new Date(extraction.extractedAt);
+        const dateKey = toDayKey(date);
+        const amount = parseFloat(extraction.extractedData?.total);
+        revenueByDay[dateKey] = (revenueByDay[dateKey] || 0) + (Number.isFinite(amount) ? amount : 0);
+      }
+    });
+
+    const revenueTrend = Object.entries(revenueByDay)
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([dateKey, revenue]) => ({
+        date: formatShort(dateKey),
+        revenue: Math.round(revenue),
+      }));
+
+    setRevenueData(revenueTrend);
+
+    const customersByDay = {};
+    customers.forEach((customer) => {
+      const createdAt = customer.createdAt?.toDate?.() || new Date(customer.createdAt);
+      if (createdAt < startDate) return;
+      const dateKey = toDayKey(createdAt);
+      customersByDay[dateKey] = (customersByDay[dateKey] || 0) + 1;
+    });
+
+    let cumulativeCustomers = 0;
+    const customerTrend = Object.entries(customersByDay)
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([dateKey, count]) => {
+        cumulativeCustomers += count;
+        return {
+          date: formatShort(dateKey),
+          customers: cumulativeCustomers,
+        };
+      });
+
+    setCustomerData(customerTrend);
+
+    const docTypeCounts = {};
+    extractions.forEach(extraction => {
+      const type = extraction.documentType || 'other';
+      docTypeCounts[type] = (docTypeCounts[type] || 0) + 1;
+    });
+
+    const docTypeData = Object.entries(docTypeCounts).map(([type, count]) => ({
+      type: type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()),
+      count,
+    }));
+
+    setDocumentTypeData(docTypeData);
+  };
+
+  const generateReport = async () => {
+    setGenerating(true);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      toast.success('BI Report generated successfully!', { duration: 4000 });
+      
+      const reportData = {
+        generated: new Date().toISOString(),
+        period: reportPeriod,
+        metrics,
+        summary: `Business Intelligence Report for ${reportPeriod} period`,
+      };
+
+      const blob = new Blob([JSON.stringify(reportData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `bi-report-${reportPeriod}-${Date.now()}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('[BIReports] Generation failed:', error);
+      toast.error('Failed to generate report');
+    } finally {
+      setGenerating(false);
+    }
+  };
+
   return (
-    <div className="p-6">
+    <div className="px-4 pb-16">
       <PageHeader
-        title="Predictive Business Intelligence"
-        subtitle="Generate AI-driven executive summaries, forecasts, and ready-to-share PDF reports."
+        title="Business Intelligence Reports"
+        subtitle="Comprehensive analytics and insights from your business data"
       />
-      <div className="rounded-2xl border border-emerald-500/20 bg-white/5 p-6 shadow-[0_0_30px_rgba(16,185,129,0.25)]">
-        <p className="text-sm text-gray-300">
-          {benchmarksLoading
-            ? 'Loading global benchmarks…'
-            : 'Use the orchestrator to benchmark tenant metrics against global performance and create branded deliverables.'}
-        </p>
+
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="mb-6 flex flex-col md:flex-row gap-4 items-center justify-between"
+      >
+        <div className="flex items-center gap-3">
+          <select
+            value={reportPeriod}
+            onChange={(e) => setReportPeriod(e.target.value)}
+            className="px-4 py-2 rounded-lg border border-white/10 bg-white/5 text-white focus:border-indigo-400 focus:outline-none"
+          >
+            <option value="weekly">Weekly</option>
+            <option value="monthly">Monthly</option>
+            <option value="yearly">Yearly</option>
+          </select>
+
+          <button
+            onClick={loadBIData}
+            disabled={loading}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg border border-white/10 bg-white/5 text-white hover:bg-white/10 transition"
+          >
+            <FiRefreshCw className={loading ? 'animate-spin' : ''} />
+            Refresh
+          </button>
+        </div>
+
         <button
-          type="button"
-          onClick={handleGenerate}
-          disabled={loading || benchmarksLoading}
-          className="mt-4 inline-flex items-center gap-2 rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-[0_10px_25px_rgba(16,185,129,0.35)] transition hover:bg-emerald-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+          onClick={generateReport}
+          disabled={generating}
+          className="flex items-center gap-2 px-6 py-2 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-semibold hover:from-indigo-600 hover:to-purple-600 transition"
         >
-          {loading ? 'Generating…' : 'Generate Sample Report'}
+          {generating ? (
+            <>
+              <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+              Generating...
+            </>
+          ) : (
+            <>
+              <FiDownload />
+              Generate Report
+            </>
+          )}
         </button>
-        {error ? <p className="mt-3 text-sm text-red-400">{error}</p> : null}
+      </motion.div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <StatCard
+          title="Total Revenue"
+          value={`$${metrics.totalRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
+          change={`+${metrics.revenueGrowth}%`}
+          trend="up"
+          icon={FiDollarSign}
+        />
+        <StatCard
+          title="Total Customers"
+          value={metrics.totalCustomers}
+          change={`+${metrics.customerGrowth}%`}
+          trend="up"
+          icon={FiUsers}
+        />
+        <StatCard
+          title="Documents Processed"
+          value={metrics.totalDocuments}
+          icon={FiFileText}
+        />
+        <StatCard
+          title="Avg Order Value"
+          value={`$${metrics.averageOrderValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
+          icon={FiTarget}
+        />
       </div>
 
-      {report ? (
-        <div className="mt-8 space-y-4 rounded-2xl border border-white/10 bg-white/5 p-6 shadow-[0_0_25px_rgba(99,102,241,0.25)]">
-          <div>
-            <h2 className="text-lg font-semibold text-emerald-400">AI Summary</h2>
-            <p className="mt-2 whitespace-pre-line text-sm text-gray-200">{report.aiSummary}</p>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="rounded-2xl border border-white/10 bg-gradient-to-br from-white/5 to-white/[0.02] p-6"
+        >
+          <div className="flex items-center gap-3 mb-4">
+            <FiTrendingUp className="text-2xl text-green-400" />
+            <div>
+              <h3 className="text-lg font-semibold text-white">Revenue Trend</h3>
+              <p className="text-sm text-white/60">Last 30 days</p>
+            </div>
           </div>
-          <div>
-            <h3 className="text-base font-semibold text-emerald-300">Forecast</h3>
-            <p className="mt-1 text-sm text-gray-200">Next Month Growth: {report.forecast.nextMonthGrowth}</p>
-            <p className="text-sm text-gray-200">
-              Predicted Revenue: R{Number(report.forecast.predictedRevenue ?? 0).toLocaleString()}
-            </p>
-            {report.forecast.predictedProfit !== undefined ? (
-              <p className="text-sm text-gray-200">
-                Projected Profit: R{Number(report.forecast.predictedProfit ?? 0).toLocaleString()} ({report.forecast.margin})
-              </p>
-            ) : null}
+          
+          {revenueData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={250}>
+              <LineChart data={revenueData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                <XAxis dataKey="date" stroke="rgba(255,255,255,0.5)" tick={{ fill: 'rgba(255,255,255,0.5)' }} />
+                <YAxis stroke="rgba(255,255,255,0.5)" tick={{ fill: 'rgba(255,255,255,0.5)' }} />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: 'rgba(0,0,0,0.8)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
+                  labelStyle={{ color: '#fff' }}
+                />
+                <Line type="monotone" dataKey="revenue" stroke="#6366f1" strokeWidth={2} dot={{ fill: '#6366f1' }} />
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="h-[250px] flex items-center justify-center text-white/40">
+              No revenue data available
+            </div>
+          )}
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="rounded-2xl border border-white/10 bg-gradient-to-br from-white/5 to-white/[0.02] p-6"
+        >
+          <div className="flex items-center gap-3 mb-4">
+            <FiUsers className="text-2xl text-blue-400" />
+            <div>
+              <h3 className="text-lg font-semibold text-white">Customer Growth</h3>
+              <p className="text-sm text-white/60">Cumulative total</p>
+            </div>
           </div>
-          <a
-            className="inline-flex items-center gap-2 text-sm font-medium text-emerald-300 underline hover:text-emerald-200"
-            href={report.pdfPath}
-            target="_blank"
-            rel="noreferrer"
-          >
-            📄 Download PDF Report
-          </a>
+          
+          {customerData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={250}>
+              <LineChart data={customerData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                <XAxis dataKey="date" stroke="rgba(255,255,255,0.5)" tick={{ fill: 'rgba(255,255,255,0.5)' }} />
+                <YAxis stroke="rgba(255,255,255,0.5)" tick={{ fill: 'rgba(255,255,255,0.5)' }} />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: 'rgba(0,0,0,0.8)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
+                  labelStyle={{ color: '#fff' }}
+                />
+                <Line type="monotone" dataKey="customers" stroke="#3b82f6" strokeWidth={2} dot={{ fill: '#3b82f6' }} />
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="h-[250px] flex items-center justify-center text-white/40">
+              No customer data available
+            </div>
+          )}
+        </motion.div>
+      </div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4 }}
+        className="rounded-2xl border border-white/10 bg-gradient-to-br from-white/5 to-white/[0.02] p-6"
+      >
+        <div className="flex items-center gap-3 mb-4">
+          <FiBarChart2 className="text-2xl text-purple-400" />
+          <div>
+            <h3 className="text-lg font-semibold text-white">Document Distribution</h3>
+            <p className="text-sm text-white/60">By document type</p>
+          </div>
         </div>
-      ) : null}
+        
+        {documentTypeData.length > 0 ? (
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={documentTypeData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+              <XAxis dataKey="type" stroke="rgba(255,255,255,0.5)" tick={{ fill: 'rgba(255,255,255,0.5)' }} />
+              <YAxis stroke="rgba(255,255,255,0.5)" tick={{ fill: 'rgba(255,255,255,0.5)' }} />
+              <Tooltip 
+                contentStyle={{ backgroundColor: 'rgba(0,0,0,0.8)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
+                labelStyle={{ color: '#fff' }}
+              />
+              <Bar dataKey="count" fill="#a855f7" radius={[8, 8, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className="h-[300px] flex items-center justify-center text-white/40">
+            No document data available
+          </div>
+        )}
+      </motion.div>
     </div>
   );
 }

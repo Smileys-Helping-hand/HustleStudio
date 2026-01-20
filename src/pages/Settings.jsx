@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { FiUsers, FiKey, FiDatabase, FiBell, FiDownload, FiTrash2, FiSave, FiCode } from 'react-icons/fi';
+import { FiUsers, FiKey, FiDatabase, FiBell, FiDownload, FiTrash2, FiSave, FiCode, FiCpu } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useTheme } from '../theme/ThemeContext.jsx';
 import { themes } from '../theme/themes.js';
@@ -9,6 +9,7 @@ import { toast } from 'react-hot-toast';
 import { collection, getDocs, addDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../lib/firebase.js';
 import { useNavigate } from 'react-router-dom';
+import AIProviderStatus from '../components/AIProviderStatus.jsx';
 
 export default function Settings() {
   const { user, role } = useAuth();
@@ -235,6 +236,22 @@ export default function Settings() {
               placeholder="Enter workspace name..."
               className="mt-2 w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2.5 text-white placeholder-white/40 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-400/20"
             />
+          </div>
+        </motion.section>
+
+        {/* AI Provider Configuration */}
+        <motion.section
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+          className="rounded-2xl border border-white/10 bg-white/5 p-6 shadow-lg backdrop-blur"
+        >
+          <div className="flex items-center gap-3">
+            <FiCpu className="text-2xl text-purple-400" />
+            <h2 className="text-xl font-semibold">AI Configuration</h2>
+          </div>
+          <div className="mt-4">
+            <AIProviderStatus />
           </div>
         </motion.section>
 

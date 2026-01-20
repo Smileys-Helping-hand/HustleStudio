@@ -5,6 +5,7 @@ build/
 reports/
 VERSION.txt
 .env
+.env.local
 npm-debug.log*
 .vite/
 .idea/

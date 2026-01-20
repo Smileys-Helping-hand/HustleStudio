@@ -29,7 +29,7 @@ Demo credentials:
 
 ### Required environment variables
 
-The AI features require an OpenAI key and optional Stripe configuration. Set the following in `.env` or your hosting provider:
+The AI features support both **OpenAI** and **Google Gemini**. Configure your preferred provider in `.env` or your hosting provider:
 
 ```
 VITE_FIREBASE_API_KEY=
@@ -41,12 +41,20 @@ VITE_FIREBASE_APP_ID=
 VITE_FIREBASE_MEASUREMENT_ID=
 VITE_BRAND_NAME="Hustle Studio"
 VITE_CDN_DOMAIN=https://cdn.hustlestudio.co.za
-VITE_OPENAI_API_KEY=
+
+# AI Provider Configuration (choose one or both)
+VITE_AI_PROVIDER=gemini              # 'openai' or 'gemini' (defaults to gemini if key present)
+VITE_OPENAI_API_KEY=                 # OpenAI API key (optional)
+VITE_GEMINI_API_KEY=                 # Google Gemini API key (recommended for production)
+
+# Payment Integration
 VITE_STRIPE_PUBLISHABLE_KEY=   # optional, required for checkout redirects
 VITE_STRIPE_SECRET_KEY=        # optional, required for webhook scripts
 VITE_PAYFAST_MERCHANT_ID=      # optional PayFast integration
 VITE_PAYFAST_KEY=              # optional PayFast integration
 VITE_PAYMENTS_ENDPOINT=        # optional server endpoint that creates Stripe/PayFast sessions
+
+# Other Configuration
 VITE_ANALYTICS_REFRESH_MS=30000
 VITE_EMAIL_SERVICE_ID=         # optional EmailJS / automation id
 VITE_EMAIL_TEMPLATE_ID=        # optional EmailJS template for digests
@@ -57,6 +65,18 @@ STRIPE_WEBHOOK_SECRET=         # optional, required for stripeWebhook handler
 VITE_BI_REPORTS_ENABLED=true   # toggle predictive BI console visibility
 VITE_BI_REPORTS_CRON=monthly   # optional hint for scheduler integrations
 ```
+
+#### AI Provider Selection
+
+- **Gemini (Recommended)**: Set `VITE_GEMINI_API_KEY` and `VITE_AI_PROVIDER=gemini`
+  - Models: `gemini-1.5-pro`, `gemini-1.5-flash`
+  - Better for production, cost-effective, multimodal support
+  
+- **OpenAI**: Set `VITE_OPENAI_API_KEY` and `VITE_AI_PROVIDER=openai`
+  - Models: `gpt-4o`, `gpt-4o-mini`
+  - Alternative if you prefer OpenAI
+
+The system automatically falls back to OpenAI if Gemini is unavailable.
 
 Optional AWS SES keys for the weekly digest script:
 
