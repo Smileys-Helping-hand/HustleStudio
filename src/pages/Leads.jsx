@@ -6,6 +6,7 @@ import { useTenant } from '../context/TenantContext.jsx';
 import { tenantCollection } from '../lib/tenant.js';
 import { useNotify } from '../context/NotificationContext.jsx';
 import { sendEmailAutomation } from '../lib/automationEngine.js';
+import { notifyNewLead, notifyLeadStatusChange } from '../lib/businessNotifications.js';
 
 const statuses = ['New', 'Contacted', 'Proposal Sent', 'Won'];
 
@@ -39,18 +40,35 @@ const Leads = () => {
       notify({ type: 'warning', title: 'Lead name required.' });
       return;
     }
-    await addDoc(tenantCollection(activeTenantId, 'leads'), {
+    const leadDoc = await addDoc(tenantCollection(activeTenantId, 'leads'), {
       ...draft,
       status: 'New',
       createdAt: serverTimestamp(),
     });
+    
+    // Send new lead notification
+    await notifyNewLead(activeTenantId, notify, {
+      id: leadDoc.id,
+      name: draft.name,
+      email: draft.email,
+      status: 'New',
+    });
+    
     notify({ type: 'success', title: 'Lead added' });
     setDraft({ name: '', email: '', notes: '' });
   };
 
   const updateStatus = async (leadId, status, lead) => {
     if (!activeTenantId) return;
+    const oldStatus = lead?.status || 'Unknown';
     await updateDoc(doc(tenantCollection(activeTenantId, 'leads'), leadId), { status });
+    
+    // Send lead status change notification
+    await notifyLeadStatusChange(activeTenantId, notify, {
+      id: leadId,
+      name: lead?.name || 'Unknown',
+    }, oldStatus, status);
+    
     notify({ type: 'info', title: `Lead marked as ${status}` });
     if (status === 'Contacted') {
       await sendEmailAutomation(activeTenantId, {

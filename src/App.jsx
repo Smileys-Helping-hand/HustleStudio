@@ -11,6 +11,7 @@ import { useAuth } from './context/AuthContext.jsx';
 import IntroGate from './components/IntroGate.jsx';
 import DiagnosticsOverlay from './components/DiagnosticsOverlay.jsx';
 import GettingStartedGuide from './components/GettingStartedGuide.jsx';
+import BusinessNotificationsManager from './components/BusinessNotificationsManager.jsx';
 import { getBooleanEnv } from './lib/env.js';
 
 const Dashboard = lazy(() => import('./pages/Dashboard.jsx'));
@@ -68,6 +69,7 @@ const AdminAIAudit = lazy(() => import('./pages/admin/AIAudit.jsx'));
 const AdminAIMetrics = lazy(() => import('./pages/admin/AIMetrics.jsx'));
 const AdminGlobalInsights = lazy(() => import('./pages/admin/GlobalInsights.jsx'));
 const AdminBIReports = lazy(() => import('./pages/admin/BIReports.jsx'));
+const MessagingPortal = lazy(() => import('./pages/MessagingPortal.jsx'));
 
 const resolveBiReportsEnabled = () => getBooleanEnv('VITE_BI_REPORTS_ENABLED', true);
 
@@ -134,6 +136,7 @@ const App = () => {
               <Route path="crm" element={<CRM />} />
               <Route path="crm/leads" element={<Leads />} />
               <Route path="crm/invoices" element={<CRMInvoices />} />
+              <Route path="messaging" element={<MessagingPortal />} />
               <Route path="ai-hub" element={<AIHub />} />
               <Route path="ai">
                 <Route path="strategy" element={<StrategyAssistant />} />
@@ -203,6 +206,7 @@ const App = () => {
       <PerformanceMonitor />
       <KeyboardShortcuts />
       {user && <GettingStartedGuide />}
+      {user && <BusinessNotificationsManager />}
     </>
   );
 };

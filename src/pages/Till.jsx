@@ -10,6 +10,8 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { tenantCollection } from '../lib/tenant.js';
 import { watchInventory, updateItem, getPopularItems } from '../lib/inventoryManager.js';
 import { generateSalesInsight } from '../lib/insightBot.js';
+import { notifySaleCompleted, checkLowStockAlerts } from '../lib/businessNotifications.js';
+import { useNotify } from '../context/NotificationContext.jsx';
 
 const VAT_RATE = 0.15;
 
@@ -22,6 +24,7 @@ const paymentMethods = [
 const Till = () => {
   const { activeTenantId, activeTenant } = useTenant();
   const { user } = useAuth();
+  const notify = useNotify();
   const [inventory, setInventory] = useState([]);
   const [cart, setCart] = useState([]);
   const [paymentMethod, setPaymentMethod] = useState('cash');
@@ -161,7 +164,8 @@ const Till = () => {
         processedBy: user?.uid ?? null,
         createdAt: serverTimestamp(),
       };
-      await addDoc(tenantCollection(activeTenantId, 'sales'), payload);
+      const saleDoc = await addDoc(tenantCollection(activeTenantId, 'sales'), payload);
+      
       await Promise.all(
         cart.map((item) => {
           const currentStock = inventory.find((record) => record.id === item.id)?.quantity ?? 0;
@@ -169,6 +173,19 @@ const Till = () => {
           return updateItem(activeTenantId, item.id, { quantity: nextStock });
         })
       );
+      
+      // Send sale completed notification
+      await notifySaleCompleted(activeTenantId, notify, {
+        id: saleDoc.id,
+        total: totals.total,
+        paymentType: paymentMethod,
+      });
+      
+      // Check for low stock after sale
+      setTimeout(() => {
+        checkLowStockAlerts(activeTenantId, notify, 5);
+      }, 1000);
+      
       receiptRef.current?.download?.();
       toast.success('Sale captured. Receipt ready.');
       setCart([]);

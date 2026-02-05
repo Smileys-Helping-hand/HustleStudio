@@ -5,9 +5,12 @@ import PageHeader from '../components/common/PageHeader.jsx';
 import EmptyState from '../components/EmptyState.jsx';
 import { useTenant } from '../context/TenantContext.jsx';
 import { toast } from 'react-hot-toast';
+import { useNotify } from '../context/NotificationContext.jsx';
+import { checkProjectDeadlines } from '../lib/businessNotifications.js';
 
 const Projects = () => {
   const { activeTenantId } = useTenant();
+  const notify = useNotify();
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -46,12 +49,19 @@ const Projects = () => {
       
       setProjects(projectsData);
       setLoading(false);
+      
+      // Check for upcoming project deadlines
+      if (activeTenantId && notify) {
+        setTimeout(() => {
+          checkProjectDeadlines(activeTenantId, notify, 3);
+        }, 1000);
+      }
     } catch (err) {
       console.error('[Projects] Failed to load projects:', err);
       setError('Failed to load projects');
       setLoading(false);
     }
-  }, [activeTenantId]);
+  }, [activeTenantId, notify]);
 
   const handleCreate = () => {
     if (!activeTenantId) {

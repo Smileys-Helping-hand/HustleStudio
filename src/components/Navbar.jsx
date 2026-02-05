@@ -20,6 +20,7 @@ import {
   FiTrendingUp,
   FiZap,
   FiLogOut,
+  FiMessageSquare,
 } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useTheme } from '../theme/ThemeContext.jsx';
@@ -55,6 +56,7 @@ export default function Navbar() {
       { to: '/hustles', icon: <FiBriefcase />, label: 'My Hustles', section: 'projects' },
       { to: '/finance', icon: <FiBriefcase />, label: 'Finance', section: 'finance' },
       { to: '/crm', icon: <FiGrid />, label: 'CRM', section: 'crm', matches: ['/crm'] },
+      { to: '/messaging', icon: <FiMessageSquare />, label: 'Messaging', section: 'messaging' },
       { to: '/customers', icon: <FiGrid />, label: 'Customers', section: 'customers' },
       { to: '/data-extraction', icon: <FiTool />, label: 'Document Scanner', section: 'tools' },
       { to: '/marketing/lab', icon: <FiTrendingUp />, label: 'Marketing', section: 'marketing', matches: ['/marketing'] },

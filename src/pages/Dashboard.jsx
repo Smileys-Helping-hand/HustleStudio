@@ -8,6 +8,8 @@ import { tenantCollection } from '../lib/tenant.js';
 import logger from '../lib/logger.js';
 import MetricCard from '../components/MetricCard.jsx';
 import PageHeader from '../components/common/PageHeader.jsx';
+import { useNotify } from '../context/NotificationContext.jsx';
+import { checkSalesMilestones } from '../lib/businessNotifications.js';
 
 const Dashboard = () => {
   const [inventoryCount, setInventoryCount] = useState(0);
@@ -15,6 +17,7 @@ const Dashboard = () => {
   const [sales, setSales] = useState([]);
   const [reportsCount, setReportsCount] = useState(0);
   const { activeTenantId } = useTenant();
+  const notify = useNotify();
 
   useEffect(() => {
     document.title = 'Dashboard • Hustle Studio';
@@ -59,16 +62,11 @@ const Dashboard = () => {
   const revenueTotal = useMemo(() => sales.reduce((sum, sale) => sum + sale.total, 0), [sales]);
 
   useEffect(() => {
-    if (sales.length === 0) return;
-    const threshold = 50000;
-    if (revenueTotal >= threshold) {
-      const seenKey = `hs_sales_milestone_${threshold}`;
-      if (typeof window !== 'undefined' && !window.sessionStorage.getItem(seenKey)) {
-        toast.success('Sales milestone reached! Review the finance tab for celebration insights.');
-        window.sessionStorage.setItem(seenKey, 'true');
-      }
-    }
-  }, [revenueTotal, sales.length]);
+    if (!activeTenantId || sales.length === 0) return;
+    
+    // Check for sales milestones
+    checkSalesMilestones(activeTenantId, notify);
+  }, [activeTenantId, revenueTotal, sales.length, notify]);
 
   const activityFeed = useMemo(
     () =>

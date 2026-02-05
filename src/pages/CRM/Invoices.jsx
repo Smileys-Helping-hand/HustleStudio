@@ -4,10 +4,13 @@ import 'jspdf-autotable';
 import { motion } from 'framer-motion';
 import PageHeader from '../../components/common/PageHeader.jsx';
 import { useNotify } from '../../context/NotificationContext.jsx';
+import { useTenant } from '../../context/TenantContext.jsx';
+import { notifyInvoiceCreated } from '../../lib/businessNotifications.js';
 
 const defaultLineItem = { description: '', quantity: 1, price: 0 };
 
 const Invoices = () => {
+  const { activeTenantId } = useTenant();
   const [client, setClient] = useState({
     name: '',
     contact: '',
@@ -68,6 +71,21 @@ const Invoices = () => {
 
       const dueDate = new Date();
       dueDate.setDate(dueDate.getDate() + 7);
+      
+      // Generate invoice number
+      const invoiceNumber = `INV-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
+      
+      // Send invoice created notification
+      if (activeTenantId) {
+        await notifyInvoiceCreated(activeTenantId, notify, {
+          id: invoiceNumber,
+          invoiceNumber,
+          clientName: client.name,
+          total: totals.total,
+          dueDate,
+        });
+      }
+      
       notify({
         title: 'Invoice scheduled',
         description: `${client.name} — follow up by ${dueDate.toLocaleDateString()}.`,
