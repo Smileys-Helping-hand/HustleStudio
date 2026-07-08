@@ -31,6 +31,7 @@ const Projects = lazy(() => import('./pages/Projects.jsx'));
 const Finance = lazy(() => import('./pages/Finance.jsx'));
 const CRM = lazy(() => import('./pages/CRM.jsx'));
 const CRMInvoices = lazy(() => import('./pages/CRM/InvoicesV2.jsx'));
+const CRMInvoicesList = lazy(() => import('./pages/CRM/InvoicesList.jsx'));
 const AIHub = lazy(() => import('./pages/AIHub.jsx'));
 const AIOrchestrator = lazy(() => import('./pages/ai/Orchestrator.jsx'));
 const Analytics = lazy(() => import('./pages/Analytics.jsx'));
@@ -136,6 +137,7 @@ const App = () => {
               <Route path="crm" element={<CRM />} />
               <Route path="crm/leads" element={<Leads />} />
               <Route path="crm/invoices" element={<CRMInvoices />} />
+              <Route path="crm/invoices-list" element={<CRMInvoicesList />} />
               <Route path="messaging" element={<MessagingPortal />} />
               <Route path="ai-hub" element={<AIHub />} />
               <Route path="ai">

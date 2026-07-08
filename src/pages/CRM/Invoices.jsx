@@ -1,6 +1,4 @@
 import React, { useMemo, useState } from 'react';
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
 import { motion } from 'framer-motion';
 import PageHeader from '../../components/common/PageHeader.jsx';
 import { useNotify } from '../../context/NotificationContext.jsx';

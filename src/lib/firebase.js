@@ -1,6 +1,7 @@
 import { initializeApp, getApps } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getStorage } from 'firebase/storage';
+import { getFirestore, enableIndexedDbPersistence } from 'firebase/firestore';
 import { getEnvValue } from './env.js';
 
 const firebaseConfig = {
@@ -14,9 +15,21 @@ const firebaseConfig = {
 };
 
 let app;
+let db;
 try {
   app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
-  console.info('[FirebaseInit] Firebase app initialised (Auth only).');
+  console.info('[FirebaseInit] Firebase app initialised.');
+
+  db = getFirestore(app);
+
+  // Enable offline persistence
+  enableIndexedDbPersistence(db).catch((err) => {
+    if (err.code === 'failed-precondition') {
+      console.warn('[FirebaseInit] Multiple tabs open, persistence disabled');
+    } else if (err.code === 'unimplemented') {
+      console.warn('[FirebaseInit] Persistence not supported in this browser');
+    }
+  });
 } catch (error) {
   console.error('[FirebaseInit] Failed to initialise Firebase.', error);
   throw error;
@@ -24,9 +37,7 @@ try {
 
 export const auth = getAuth(app);
 export const storage = getStorage(app);
-
-// Firestore has been removed - use API endpoints instead
-export const db = null;
+export { db };
 
 export { firebaseConfig };
 export default app;

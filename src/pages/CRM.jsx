@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiMail, FiPhone, FiUserPlus, FiX } from 'react-icons/fi';
+import { FiMail, FiPhone, FiUserPlus, FiX, FiFileText } from 'react-icons/fi';
 import { addDoc, onSnapshot, orderBy, query, serverTimestamp } from 'firebase/firestore';
 import PageHeader from '../components/common/PageHeader.jsx';
 import { useTenant } from '../context/TenantContext.jsx';
@@ -73,7 +73,13 @@ const CRM = () => {
               to="/crm/invoices"
               className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/70 transition hover:border-indigo-400/60 hover:text-white"
             >
-              Generate Invoice
+              Create Quote / Invoice
+            </Link>
+            <Link
+              to="/crm/invoices-list"
+              className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/70 transition hover:border-indigo-400/60 hover:text-white"
+            >
+              Quote & Invoice History
             </Link>
           </div>
         }
@@ -131,6 +137,20 @@ const CRM = () => {
                       <FiPhone /> Call
                     </a>
                   )}
+                  <Link
+                    to="/crm/invoices"
+                    onClick={() => {
+                      sessionStorage.setItem('invoicePreFill', JSON.stringify({
+                        client: contact.name,
+                        clientEmail: contact.email || '',
+                        clientAddress: contact.company ? `${contact.company}` : '',
+                        notes: `Quote for ${contact.name}. Valid for 30 days.`
+                      }));
+                    }}
+                    className="inline-flex items-center gap-2 rounded-full border border-white/20 px-3 py-1 hover:border-indigo-400/60 hover:text-white"
+                  >
+                    <FiFileText /> Create Quote/Invoice
+                  </Link>
                 </div>
               </article>
             ))
@@ -181,8 +201,9 @@ const CRM = () => {
 
               <form onSubmit={handleCreateContact} className="mt-6 space-y-4">
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-white/80">Name *</label>
+                  <label htmlFor="contactName" className="mb-2 block text-sm font-medium text-white/80">Name *</label>
                   <input
+                    id="contactName"
                     type="text"
                     value={newContact.name}
                     onChange={(e) => setNewContact({ ...newContact, name: e.target.value })}
@@ -193,8 +214,9 @@ const CRM = () => {
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-white/80">Email</label>
+                  <label htmlFor="contactEmail" className="mb-2 block text-sm font-medium text-white/80">Email</label>
                   <input
+                    id="contactEmail"
                     type="email"
                     value={newContact.email}
                     onChange={(e) => setNewContact({ ...newContact, email: e.target.value })}
@@ -204,8 +226,9 @@ const CRM = () => {
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-white/80">Phone</label>
+                  <label htmlFor="contactPhone" className="mb-2 block text-sm font-medium text-white/80">Phone</label>
                   <input
+                    id="contactPhone"
                     type="tel"
                     value={newContact.phone}
                     onChange={(e) => setNewContact({ ...newContact, phone: e.target.value })}
@@ -215,8 +238,9 @@ const CRM = () => {
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-white/80">Company</label>
+                  <label htmlFor="contactCompany" className="mb-2 block text-sm font-medium text-white/80">Company</label>
                   <input
+                    id="contactCompany"
                     type="text"
                     value={newContact.company}
                     onChange={(e) => setNewContact({ ...newContact, company: e.target.value })}
@@ -226,8 +250,9 @@ const CRM = () => {
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-white/80">Stage</label>
+                  <label htmlFor="contactStage" className="mb-2 block text-sm font-medium text-white/80">Stage</label>
                   <select
+                    id="contactStage"
                     value={newContact.stage}
                     onChange={(e) => setNewContact({ ...newContact, stage: e.target.value })}
                     className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-400/20"
