@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  FiFileText, FiDollarSign, FiCreditCard, FiFile, 
-  FiDownload, FiEye, FiTrash2, FiFilter, FiSearch 
+import {
+  FiFileText, FiDollarSign, FiCreditCard, FiFile,
+  FiDownload, FiEye, FiTrash2, FiFilter, FiSearch, FiX
 } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
 import DocumentUploader from '../components/DocumentUploader.jsx';

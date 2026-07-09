@@ -72,7 +72,7 @@ export default class ErrorBoundary extends React.Component {
               <div className="flex-1">
                 <h2 className="text-2xl font-bold text-white mb-2">Something went wrong</h2>
                 <p className="text-white/70 mb-1">
-                  We're sorry for the inconvenience. The application encountered an unexpected error.
+                  We&apos;re sorry for the inconvenience. The application encountered an unexpected error.
                 </p>
                 <p className="text-xs text-white/50 mb-4">Error ID: {errorId}</p>
                 

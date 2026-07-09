@@ -70,16 +70,10 @@ const CRM = () => {
               <FiUserPlus /> New Contact
             </button>
             <Link
-              to="/crm/invoices"
-              className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/70 transition hover:border-indigo-400/60 hover:text-white"
+              to="/crm/business-documents"
+              className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 px-4 py-2 text-sm font-semibold text-white transition hover:from-indigo-600 hover:to-purple-600"
             >
-              Create Quote / Invoice
-            </Link>
-            <Link
-              to="/crm/invoices-list"
-              className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/70 transition hover:border-indigo-400/60 hover:text-white"
-            >
-              Quote & Invoice History
+              💼 Business Documents
             </Link>
           </div>
         }

@@ -147,7 +147,7 @@ export default function KeyboardShortcuts() {
 
                 <div className="mt-6 rounded-lg border border-indigo-500/20 bg-indigo-500/10 p-4">
                   <p className="text-xs text-[var(--theme-text)]/70">
-                    <strong className="text-indigo-400">Tip:</strong> Press <kbd className="mx-1 rounded bg-indigo-500/20 px-2 py-0.5 text-xs text-indigo-300">?</kbd> anytime to view these shortcuts. They won't work when typing in input fields.
+                    <strong className="text-indigo-400">Tip:</strong> Press <kbd className="mx-1 rounded bg-indigo-500/20 px-2 py-0.5 text-xs text-indigo-300">?</kbd> anytime to view these shortcuts. They won&apos;t work when typing in input fields.
                   </p>
                 </div>
               </div>
