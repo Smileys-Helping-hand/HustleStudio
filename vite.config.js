@@ -7,8 +7,6 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
-      // Replace Firestore imports with stub implementation
-      "firebase/firestore": path.resolve(__dirname, "./src/lib/firestoreStub.js"),
     },
   },
   server: {
