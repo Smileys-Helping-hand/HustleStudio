@@ -2,10 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FiFileText, FiDollarSign, FiPlus, FiSearch } from 'react-icons/fi';
-import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import PageHeader from '../../components/common/PageHeader.jsx';
 import { useTenant } from '../../context/TenantContext.jsx';
-import { db } from '../../lib/firebase.js';
+import { getNeonClient } from '../../lib/neonClient.js';
 
 const BusinessDocuments = () => {
   const navigate = useNavigate();
@@ -17,25 +16,47 @@ const BusinessDocuments = () => {
   const [filterStatus, setFilterStatus] = useState('all');
 
   useEffect(() => {
-    if (!activeTenantId || !db) return;
+    if (!activeTenantId) return;
 
-    const unsubscribe = onSnapshot(
-      query(
-        collection(db, 'tenants', activeTenantId, 'invoices'),
-        orderBy('createdAt', 'desc')
-      ),
-      (snapshot) => {
-        const invoices = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-          type: 'invoice',
-          createdAt: doc.data().createdAt?.toDate?.() || new Date(),
-        }));
-        setDocuments(invoices);
+    const fetchDocuments = async () => {
+      try {
+        const neon = getNeonClient();
+
+        // Fetch both invoices and quotes
+        const [invoices, quotes] = await Promise.all([
+          neon.getInvoices(activeTenantId),
+          neon.getQuotes(activeTenantId),
+        ]);
+
+        // Combine and normalize data
+        const allDocs = [
+          ...invoices.map((inv) => ({
+            ...inv,
+            type: 'invoice',
+            number: inv.invoice_number,
+            createdAt: new Date(inv.created_at),
+          })),
+          ...quotes.map((quote) => ({
+            ...quote,
+            type: 'quote',
+            number: quote.quote_number,
+            createdAt: new Date(quote.created_at),
+          })),
+        ];
+
+        // Sort by createdAt descending
+        allDocs.sort((a, b) => b.createdAt - a.createdAt);
+        setDocuments(allDocs);
+      } catch (error) {
+        console.error('[BusinessDocuments] Failed to fetch documents:', error);
       }
-    );
+    };
 
-    return () => unsubscribe();
+    fetchDocuments();
+
+    // Poll for updates every 30 seconds
+    const interval = setInterval(fetchDocuments, 30000);
+    return () => clearInterval(interval);
   }, [activeTenantId]);
 
   useEffect(() => {
@@ -52,9 +73,9 @@ const BusinessDocuments = () => {
     if (searchTerm) {
       filtered = filtered.filter(
         (doc) =>
-          doc.clientName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          doc.invoiceNumber?.includes(searchTerm) ||
-          doc.quoteNumber?.includes(searchTerm)
+          doc.client_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          doc.invoice_number?.includes(searchTerm) ||
+          doc.quote_number?.includes(searchTerm)
       );
     }
 

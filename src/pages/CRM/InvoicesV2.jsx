@@ -1,12 +1,11 @@
 import React, { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { FiUpload, FiEye, FiDownload, FiPlus, FiTrash2 } from 'react-icons/fi';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import PageHeader from '../../components/common/PageHeader.jsx';
 import { useNotify } from '../../context/NotificationContext.jsx';
 import { useTenant } from '../../context/TenantContext.jsx';
-import { db } from '../../lib/firebase.js';
 import { generateDocumentPdf } from '../../lib/pdfGenerator.js';
+import { getNeonClient } from '../../lib/neonClient.js';
 
 const defaultLineItem = { description: '', quantity: 1, price: 0 };
 
@@ -221,7 +220,7 @@ const InvoicesV2 = () => {
   };
 
   const saveInvoiceToDatabase = async (invoiceData) => {
-    if (!activeTenantId || !db) {
+    if (!activeTenantId) {
       notify({ type: 'error', title: 'Error', description: 'Workspace not selected' });
       return false;
     }
@@ -231,22 +230,47 @@ const InvoicesV2 = () => {
       if (docType === 'invoice') {
         finalStatus = paymentStatus === 'paid' ? 'paid' : (paymentStatus === 'partially_paid' ? 'partially_paid' : 'draft');
       } else {
-        // quotes start as draft
         finalStatus = 'draft';
       }
 
-      const newDoc = {
-        ...invoiceData,
-        status: finalStatus,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-        tenantId: activeTenantId,
-      };
+      const neon = getNeonClient();
 
-      await addDoc(
-        collection(db, 'tenants', activeTenantId, 'invoices'),
-        newDoc
-      );
+      // Save via appropriate endpoint based on document type
+      if (docType === 'quote') {
+        await neon.createQuote(activeTenantId, {
+          quoteNumber: invoiceData.invoiceNumber,
+          clientName: invoiceData.clientName,
+          clientEmail: invoiceData.clientEmail,
+          clientAddress: invoiceData.clientAddress,
+          companyName: invoiceData.companyName,
+          companyEmail: invoiceData.companyEmail,
+          companyPhone: invoiceData.companyPhone,
+          lineItems: invoiceData.lineItems,
+          total: invoiceData.total,
+          currency: invoiceData.currency,
+          status: finalStatus,
+          notes: invoiceData.notes,
+          validityDays: invoiceData.validUntil ? Math.ceil((new Date(invoiceData.validUntil) - new Date()) / (1000 * 60 * 60 * 24)) : 30,
+        });
+      } else {
+        await neon.createInvoice(activeTenantId, {
+          invoiceNumber: invoiceData.invoiceNumber,
+          clientName: invoiceData.clientName,
+          clientEmail: invoiceData.clientEmail,
+          clientAddress: invoiceData.clientAddress,
+          companyName: invoiceData.companyName,
+          companyEmail: invoiceData.companyEmail,
+          companyPhone: invoiceData.companyPhone,
+          lineItems: invoiceData.lineItems,
+          subtotal: invoiceData.subtotal,
+          tax: invoiceData.tax,
+          taxRate: invoiceData.taxRate,
+          total: invoiceData.total,
+          currency: invoiceData.currency,
+          status: finalStatus,
+          notes: invoiceData.notes,
+        });
+      }
 
       notify({
         type: 'success',
