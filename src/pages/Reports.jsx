@@ -97,8 +97,8 @@ const Reports = () => {
     // dynamic import to reduce initial bundle size
     const jsPDFModule = await import('jspdf');
     const JsPDF = jsPDFModule.default || jsPDFModule;
-    // jspdf-autotable augments the jsPDF prototype
-    await import('jspdf-autotable');
+    const autoTableModule = await import('jspdf-autotable');
+    const autoTable = autoTableModule.default || autoTableModule;
 
     const doc = new JsPDF();
     doc.setFontSize(16);
@@ -106,7 +106,7 @@ const Reports = () => {
     doc.setFontSize(11);
     doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 26);
 
-    doc.autoTable({
+    autoTable(doc, {
       startY: 34,
       head: [['Date', 'Total revenue', 'Transactions']],
       body: sales.map((sale) => [
@@ -116,7 +116,7 @@ const Reports = () => {
       ]),
     });
 
-    doc.autoTable({
+    autoTable(doc, {
       startY: doc.lastAutoTable.finalY + 10,
       head: [['Metric', 'Value']],
       body: [

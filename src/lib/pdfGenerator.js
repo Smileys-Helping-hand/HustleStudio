@@ -5,7 +5,8 @@
 export const generateDocumentPdf = async (documentData, logoPreview) => {
   const jsPDFModule = await import('jspdf');
   const JsPDF = jsPDFModule.default || jsPDFModule;
-  await import('jspdf-autotable');
+  const autoTableModule = await import('jspdf-autotable');
+  const autoTable = autoTableModule.default || autoTableModule;
 
   const doc = new JsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
@@ -110,12 +111,49 @@ export const generateDocumentPdf = async (documentData, logoPreview) => {
   }
   if (documentData.clientAddress) {
     doc.text(documentData.clientAddress, 14, clientY);
+    clientY += 6;
+  } else {
+    clientY += 2;
+  }
+
+  // Draw Project Scope / Notes above the table
+  let tableStartY = clientY + 8;
+  const notesStr = documentData.notes || '';
+  if (notesStr.trim()) {
+    const headerY = clientY + 8;
+    const bodyY = clientY + 14;
+
+    doc.setFont(undefined, 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor(120, 120, 120);
+    doc.text(isQuote ? 'PROJECT SCOPE / TERMS' : 'PROJECT DETAILS & DESCRIPTION', 14, headerY);
+    
+    const splitNotes = doc.splitTextToSize(notesStr, pageWidth - 32);
+    const notesHeight = splitNotes.length * 4.5;
+    
+    // Draw a premium light slate panel background
+    doc.saveState();
+    doc.setFillColor(248, 250, 252); // slate-50
+    doc.roundedRect(14, bodyY, pageWidth - 28, notesHeight + 6, 2, 2, 'F');
+    
+    // Draw brand accent left border
+    doc.setFillColor(primaryRgb[0], primaryRgb[1], primaryRgb[2]);
+    doc.rect(14, bodyY, 1.5, notesHeight + 6, 'F');
+    doc.restoreState();
+    
+    // Write text inside callout box
+    doc.setFont(undefined, 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(60, 60, 60);
+    doc.text(splitNotes, 18, bodyY + 5.5);
+    
+    tableStartY = bodyY + notesHeight + 6 + 10;
   }
 
   // Table of Items
   const currency = documentData.currency || 'R';
-  doc.autoTable({
-    startY: 80,
+  autoTable(doc, {
+    startY: tableStartY,
     head: [['Description', 'Qty', 'Rate', 'Amount']],
     body: (documentData.lineItems || []).map((item) => [
       item.description,
@@ -192,16 +230,7 @@ export const generateDocumentPdf = async (documentData, logoPreview) => {
     paymentOffset = 18;
   }
 
-  // Terms and Notes Section
-  const notesStr = documentData.notes || '';
-  if (notesStr.trim()) {
-    doc.setFont(undefined, 'normal');
-    doc.setFontSize(9);
-    doc.setTextColor(100, 100, 100);
-    doc.text(isQuote ? 'Terms & Validity:' : 'Notes:', 14, finalY + 28 + paymentOffset);
-    const splitNotes = doc.splitTextToSize(notesStr, pageWidth - 28);
-    doc.text(splitNotes, 14, finalY + 33 + paymentOffset);
-  }
+
 
   // Footer Message
   doc.setFontSize(8);

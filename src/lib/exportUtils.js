@@ -38,12 +38,13 @@ export const exportToPDF = async ({ title = 'Report', head = [], body = [], file
   // lazy-load jsPDF only when needed
   const jsPDFModule = await import('jspdf');
   const JsPDF = jsPDFModule.default || jsPDFModule;
-  await import('jspdf-autotable');
+  const autoTableModule = await import('jspdf-autotable');
+  const autoTable = autoTableModule.default || autoTableModule;
 
   const doc = new JsPDF({ orientation: 'landscape' });
   doc.setFontSize(16);
   doc.text(title, 14, 18);
-  doc.autoTable({ head, body, startY: 26 });
+  autoTable(doc, { head, body, startY: 26 });
   doc.save(filename);
   toast.success('PDF exported successfully.');
 };

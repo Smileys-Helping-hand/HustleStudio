@@ -395,6 +395,25 @@ const InvoicesV2 = () => {
                     className="flex-1 rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white focus:border-indigo-400 focus:outline-none"
                   />
                 </div>
+                <div className="mt-2 flex gap-1.5 flex-wrap">
+                  {[
+                    { name: 'Indigo', value: '#6366f1' },
+                    { name: 'Teal', value: '#0d9488' },
+                    { name: 'Emerald', value: '#10b981' },
+                    { name: 'Purple', value: '#8b5cf6' },
+                    { name: 'Slate', value: '#475569' },
+                    { name: 'Crimson', value: '#e11d48' },
+                  ].map((color) => (
+                    <button
+                      key={color.value}
+                      type="button"
+                      onClick={() => setCustomization(prev => ({ ...prev, primaryColor: color.value }))}
+                      className="h-5 w-5 rounded-full border border-white/20 transition hover:scale-110 active:scale-95"
+                      style={{ backgroundColor: color.value }}
+                      title={color.name}
+                    />
+                  ))}
+                </div>
               </label>
 
               <label className="text-sm text-white/70">
@@ -630,6 +649,55 @@ const InvoicesV2 = () => {
             </div>
           )}
 
+          {/* Notes (Project Description & Terms) */}
+          <div className="rounded-3xl border border-white/10 bg-white/5 p-8 shadow-[0_0_30px_rgba(99,102,241,0.12)]">
+            <h2 className="mb-4 text-xl font-semibold text-white">
+              {docType === 'quote' ? 'Project Scope & Terms' : 'Project Details & Notes'}
+            </h2>
+            
+            <div className="mb-4">
+              <span className="text-xs text-white/50 w-full block mb-1.5 font-medium">Quick Copy Templates:</span>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setNotes("The Emeron Candidate Management System is a custom built platform designed to streamline your entire recruitment process. By automatically organizing applicant information, providing powerful search tools, and instantly generating professional candidate profiles for your clients, the system eliminates hours of manual paperwork.\n\nWhat comes with your purchase:\n- Live Candidate Search and Profile Exporter\n- Interactive Recruiter Dashboard with filters\n- Automated client sharing links & custom templates\n- 1-Year maintenance SLA including system upkeep")}
+                  className="rounded-full bg-indigo-500/10 border border-indigo-500/30 px-3 py-1 text-xs text-indigo-300 hover:bg-indigo-500/20 transition active:scale-95"
+                >
+                  Candidate Management App
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setNotes("Custom software solution engineered to automate core workflows, optimize database efficiency, and provide modern, responsive dashboard views for stakeholders.\n\nIncluded with purchase:\n- Custom interactive dashboard & reports\n- Secure user authentication & roles\n- Database integration & schema design\n- Standard hosting configuration & hand-off")}
+                  className="rounded-full bg-purple-500/10 border border-purple-500/30 px-3 py-1 text-xs text-purple-300 hover:bg-purple-500/20 transition active:scale-95"
+                >
+                  Bespoke Software System
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setNotes("Ongoing system upkeep, monthly hosting management, database backups, security patches, and minor UI adjustments.\n\nStandard Inclusions:\n- 24/7 uptime monitoring & critical fixes\n- 4 hours of dedicated developer support per month\n- Automated weekly system backups\n- Monthly usage & performance audit")}
+                  className="rounded-full bg-emerald-500/10 border border-emerald-500/30 px-3 py-1 text-xs text-emerald-300 hover:bg-emerald-500/20 transition active:scale-95"
+                >
+                  Hosting & Maintenance SLA
+                </button>
+              </div>
+            </div>
+
+            <label className="block text-sm text-white/70 font-medium">
+              Explain the app, deliverables, what comes with the purchase, and payment terms:
+              <textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                rows={8}
+                placeholder={
+                  docType === 'quote'
+                    ? "e.g. This quotation is for a custom built platform designed to streamline your operations. It includes: ..."
+                    : "e.g. The candidate management system is a custom built platform..."
+                }
+                className="mt-2 w-full rounded-lg border border-white/10 bg-black/40 px-4 py-3 text-white focus:border-indigo-400 focus:outline-none placeholder-white/30 text-sm leading-relaxed"
+              />
+            </label>
+          </div>
+
           {/* Line Items */}
           <div className="rounded-3xl border border-white/10 bg-white/5 p-8 shadow-[0_0_30px_rgba(99,102,241,0.12)]">
             <h2 className="mb-6 text-xl font-semibold text-white">Line Items</h2>
@@ -684,18 +752,7 @@ const InvoicesV2 = () => {
             </div>
           </div>
 
-          {/* Notes */}
-          <div className="rounded-3xl border border-white/10 bg-white/5 p-8 shadow-[0_0_30px_rgba(99,102,241,0.12)]">
-            <label className="block text-sm text-white/70 font-medium">
-              {docType === 'quote' ? 'Quotation Validity / Terms' : 'Notes & Payment Terms'}
-              <textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                rows={3}
-                className="mt-2 w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-white focus:border-indigo-400 focus:outline-none"
-              />
-            </label>
-          </div>
+
 
           {/* Totals Summary & Submit */}
           <div className="flex flex-wrap items-center justify-between gap-6 rounded-2xl border border-indigo-400/40 bg-indigo-500/10 px-8 py-6">
@@ -785,6 +842,24 @@ const InvoicesV2 = () => {
                   {client.address && <div className="text-sm text-gray-500">{client.address}</div>}
                 </div>
 
+                {/* Notes (Project Description) */}
+                {notes.trim() && (
+                  <div className="border-t border-b border-gray-100 py-4 my-2">
+                    <div className="text-xs font-semibold text-gray-400 uppercase tracking-widest">
+                      {docType === 'quote' ? 'Project Scope & Terms' : 'Project Details & Description'}
+                    </div>
+                    <div
+                      className="mt-2 text-sm text-gray-700 whitespace-pre-line leading-relaxed p-4 rounded-xl border-l-4 text-left shadow-sm transition-all duration-300"
+                      style={{
+                        borderColor: customization.primaryColor,
+                        backgroundColor: customization.primaryColor + '08', // 5% brand color tint
+                      }}
+                    >
+                      {notes}
+                    </div>
+                  </div>
+                )}
+
                 {/* Items Preview Table */}
                 <table className="w-full text-sm">
                   <thead>
@@ -841,15 +916,7 @@ const InvoicesV2 = () => {
                   </div>
                 )}
 
-                {/* Notes */}
-                {notes.trim() && (
-                  <div className="border-t border-gray-200 pt-4">
-                    <div className="text-xs font-semibold text-gray-400 uppercase tracking-widest">
-                      {docType === 'quote' ? 'Terms & Validity' : 'Notes'}
-                    </div>
-                    <div className="mt-1 text-sm text-gray-600 whitespace-pre-line">{notes}</div>
-                  </div>
-                )}
+
 
                 {/* Footer */}
                 <div className="border-t border-gray-200 pt-4 text-center text-xs text-gray-400 italic">
