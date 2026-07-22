@@ -8,12 +8,18 @@ export class NeonClient {
   }
 
   async request(endpoint, options = {}) {
+    const apiKey = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_KEY) || 
+                   (typeof import.meta !== 'undefined' && import.meta.env?.VITE_NEON_API_KEY) || 
+                   '';
+    const headers = {
+      'Content-Type': 'application/json',
+      ...(apiKey ? { 'x-api-key': apiKey } : {}),
+      ...options.headers,
+    };
+
     const response = await fetch(`${this.apiBaseUrl}${endpoint}`, {
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
       ...options,
+      headers,
     });
 
     if (!response.ok) {

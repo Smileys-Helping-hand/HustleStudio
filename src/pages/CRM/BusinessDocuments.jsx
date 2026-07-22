@@ -24,31 +24,45 @@ const BusinessDocuments = () => {
 
         // Fetch both invoices and quotes
         const [invoices, quotes] = await Promise.all([
-          neon.getInvoices(activeTenantId),
-          neon.getQuotes(activeTenantId),
+          neon.getInvoices(activeTenantId).catch(() => []),
+          neon.getQuotes(activeTenantId).catch(() => []),
         ]);
 
         // Combine and normalize data
-        const allDocs = [
-          ...invoices.map((inv) => ({
+        let allDocs = [
+          ...(Array.isArray(invoices) ? invoices : []).map((inv) => ({
             ...inv,
             type: 'invoice',
-            number: inv.invoice_number,
-            createdAt: new Date(inv.created_at),
+            number: inv.invoice_number || inv.invoiceNumber,
+            createdAt: new Date(inv.created_at || inv.createdAt || Date.now()),
           })),
-          ...quotes.map((quote) => ({
+          ...(Array.isArray(quotes) ? quotes : []).map((quote) => ({
             ...quote,
             type: 'quote',
-            number: quote.quote_number,
-            createdAt: new Date(quote.created_at),
+            number: quote.quote_number || quote.quoteNumber,
+            createdAt: new Date(quote.created_at || quote.createdAt || Date.now()),
           })),
         ];
+
+        // Fallback to local storage recorded documents if API returned empty/failed
+        if (allDocs.length === 0) {
+          try {
+            const localInvoices = JSON.parse(localStorage.getItem(`hustlestudio_${activeTenantId}_invoices`) || '[]');
+            const localQuotes = JSON.parse(localStorage.getItem(`hustlestudio_${activeTenantId}_quotes`) || '[]');
+            allDocs = [
+              ...localInvoices.map((inv) => ({ ...inv, type: 'invoice', number: inv.invoiceNumber, createdAt: new Date(inv.createdAt) })),
+              ...localQuotes.map((q) => ({ ...q, type: 'quote', number: q.quoteNumber, createdAt: new Date(q.createdAt) })),
+            ];
+          } catch (e) {
+            // silent
+          }
+        }
 
         // Sort by createdAt descending
         allDocs.sort((a, b) => b.createdAt - a.createdAt);
         setDocuments(allDocs);
       } catch (error) {
-        console.error('[BusinessDocuments] Failed to fetch documents:', error);
+        console.warn('[BusinessDocuments] Document fetch fallback:', error?.message || error);
       }
     };
 
