@@ -36,6 +36,7 @@ const InvoicesV2 = () => {
     companyPhone: '',
     template: 'modern', // modern, classic, minimal
     taxRate: 15,
+    includeTax: true,
     currency: 'R',
     invoiceNumber: `INV-${Date.now().toString().slice(-6)}`,
   });
@@ -181,9 +182,10 @@ const InvoicesV2 = () => {
 
   const totals = useMemo(() => {
     const subtotal = lineItems.reduce((sum, item) => sum + Number(item.quantity || 0) * Number(item.price || 0), 0);
-    const tax = subtotal * (customization.taxRate / 100);
-    return { subtotal, tax, total: subtotal + tax };
-  }, [lineItems, customization.taxRate]);
+    const hasTax = customization.includeTax !== false && Number(customization.taxRate || 0) > 0;
+    const tax = hasTax ? subtotal * (Number(customization.taxRate || 0) / 100) : 0;
+    return { subtotal, tax, total: subtotal + tax, hasTax };
+  }, [lineItems, customization.taxRate, customization.includeTax]);
 
   // Update amountPaid on totals change if paid
   React.useEffect(() => {
@@ -303,6 +305,7 @@ const InvoicesV2 = () => {
         subtotal: totals.subtotal,
         tax: totals.tax,
         taxRate: customization.taxRate,
+        includeTax: customization.includeTax,
         total: totals.total,
         currency: customization.currency,
         notes: notes,
@@ -416,18 +419,51 @@ const InvoicesV2 = () => {
                 </div>
               </label>
 
-              <label className="text-sm text-white/70">
-                Tax Rate (%)
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  step="0.5"
-                  value={customization.taxRate}
-                  onChange={(e) => setCustomization(prev => ({ ...prev, taxRate: Number(e.target.value) }))}
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-white focus:border-indigo-400 focus:outline-none"
-                />
-              </label>
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm text-white/70">Tax Rate (%)</label>
+                  <label className="flex items-center gap-1.5 cursor-pointer text-xs text-indigo-300 hover:text-indigo-200">
+                    <input
+                      type="checkbox"
+                      checked={customization.includeTax}
+                      onChange={(e) => setCustomization(prev => ({
+                        ...prev,
+                        includeTax: e.target.checked,
+                        taxRate: e.target.checked ? (prev.taxRate || 15) : 0
+                      }))}
+                      className="rounded border-white/20 bg-black/40 accent-indigo-500"
+                    />
+                    Include Tax
+                  </label>
+                </div>
+                <div className="flex gap-2 items-center">
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.5"
+                    disabled={!customization.includeTax}
+                    value={customization.includeTax ? customization.taxRate : 0}
+                    onChange={(e) => setCustomization(prev => ({ ...prev, taxRate: Number(e.target.value) }))}
+                    className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-white focus:border-indigo-400 focus:outline-none disabled:opacity-40 disabled:cursor-not-allowed"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setCustomization(prev => ({
+                      ...prev,
+                      includeTax: !prev.includeTax,
+                      taxRate: !prev.includeTax ? 15 : 0
+                    }))}
+                    className={`shrink-0 rounded-lg px-2.5 py-2 text-xs font-semibold border transition ${
+                      !customization.includeTax
+                        ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20'
+                        : 'border-white/20 bg-white/5 text-white/70 hover:bg-white/10'
+                    }`}
+                  >
+                    {!customization.includeTax ? '+ Add Tax' : 'Remove Tax Line'}
+                  </button>
+                </div>
+              </div>
 
               <label className="text-sm text-white/70 sm:col-span-2">
                 Company Logo
@@ -758,7 +794,9 @@ const InvoicesV2 = () => {
           <div className="flex flex-wrap items-center justify-between gap-6 rounded-2xl border border-indigo-400/40 bg-indigo-500/10 px-8 py-6">
             <div className="text-white">
               <p className="text-sm text-white/70">Subtotal: {customization.currency}{totals.subtotal.toFixed(2)}</p>
-              <p className="text-sm text-white/70">Tax ({customization.taxRate}%): {customization.currency}{totals.tax.toFixed(2)}</p>
+              {totals.hasTax && (
+                <p className="text-sm text-white/70">Tax ({customization.taxRate}%): {customization.currency}{totals.tax.toFixed(2)}</p>
+              )}
               <p className="text-xl font-bold">Total Due: {customization.currency}{totals.total.toFixed(2)}</p>
               {docType === 'invoice' && paymentStatus !== 'unpaid' && (
                 <p className="text-xs text-emerald-400 font-semibold mt-1">Paid: {customization.currency}{amountPaid.toFixed(2)}</p>
@@ -889,10 +927,12 @@ const InvoicesV2 = () => {
                       <span>Subtotal:</span>
                       <span>{customization.currency}{totals.subtotal.toFixed(2)}</span>
                     </div>
-                    <div className="flex justify-between text-gray-500">
-                      <span>Tax ({customization.taxRate}%):</span>
-                      <span>{customization.currency}{totals.tax.toFixed(2)}</span>
-                    </div>
+                    {totals.hasTax && (
+                      <div className="flex justify-between text-gray-500">
+                        <span>Tax ({customization.taxRate}%):</span>
+                        <span>{customization.currency}{totals.tax.toFixed(2)}</span>
+                      </div>
+                    )}
                     <div className="flex justify-between border-t border-gray-300 pt-2 text-base font-bold text-gray-900">
                       <span>Total:</span>
                       <span>{customization.currency}{totals.total.toFixed(2)}</span>

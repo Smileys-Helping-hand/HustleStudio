@@ -132,14 +132,14 @@ export const generateDocumentPdf = async (documentData, logoPreview) => {
     const notesHeight = splitNotes.length * 4.5;
     
     // Draw a premium light slate panel background
-    doc.saveState();
+    if (doc.saveGraphicsState) doc.saveGraphicsState();
     doc.setFillColor(248, 250, 252); // slate-50
     doc.roundedRect(14, bodyY, pageWidth - 28, notesHeight + 6, 2, 2, 'F');
     
     // Draw brand accent left border
     doc.setFillColor(primaryRgb[0], primaryRgb[1], primaryRgb[2]);
     doc.rect(14, bodyY, 1.5, notesHeight + 6, 'F');
-    doc.restoreState();
+    if (doc.restoreGraphicsState) doc.restoreGraphicsState();
     
     // Write text inside callout box
     doc.setFont(undefined, 'normal');
@@ -187,22 +187,29 @@ export const generateDocumentPdf = async (documentData, logoPreview) => {
   doc.setFontSize(10);
   doc.setTextColor(100, 100, 100);
   
-  doc.text(`Subtotal:`, totalsX - 50, finalY);
-  doc.text(`${currency}${Number(documentData.subtotal || 0).toFixed(2)}`, totalsX, finalY, { align: 'right' });
+  let currentY = finalY;
+  const showTax = documentData.includeTax !== false && Number(documentData.taxRate || 0) > 0;
+
+  doc.text(`Subtotal:`, totalsX - 50, currentY);
+  doc.text(`${currency}${Number(documentData.subtotal || 0).toFixed(2)}`, totalsX, currentY, { align: 'right' });
   
-  doc.text(`Tax (${documentData.taxRate || 0}%):`, totalsX - 50, finalY + 6);
-  doc.text(`${currency}${Number(documentData.tax || 0).toFixed(2)}`, totalsX, finalY + 6, { align: 'right' });
-  
+  if (showTax) {
+    currentY += 6;
+    doc.text(`Tax (${documentData.taxRate || 0}%):`, totalsX - 50, currentY);
+    doc.text(`${currency}${Number(documentData.tax || 0).toFixed(2)}`, totalsX, currentY, { align: 'right' });
+  }
+
+  currentY += showTax ? 8 : 8;
   doc.setFontSize(12);
   doc.setFont(undefined, 'bold');
   doc.setTextColor(0, 0, 0);
-  doc.text(`Total:`, totalsX - 50, finalY + 14);
-  doc.text(`${currency}${Number(documentData.total || 0).toFixed(2)}`, totalsX, finalY + 14, { align: 'right' });
+  doc.text(`Total:`, totalsX - 50, currentY);
+  doc.text(`${currency}${Number(documentData.total || 0).toFixed(2)}`, totalsX, currentY, { align: 'right' });
 
   // Paid Badge / Payment details for Paid Invoices
   let paymentOffset = 0;
   if (!isQuote && documentData.paymentStatus === 'paid') {
-    doc.saveState();
+    if (doc.saveGraphicsState) doc.saveGraphicsState();
     doc.setFontSize(12);
     doc.setFont(undefined, 'bold');
     doc.setTextColor(16, 185, 129); // emerald-500
@@ -212,7 +219,7 @@ export const generateDocumentPdf = async (documentData, logoPreview) => {
     // Draw PAID border and text
     doc.roundedRect(14, finalY + 2, 35, 9, 1, 1, 'S');
     doc.text('PAID RECEIPT', 16, finalY + 8);
-    doc.restoreState();
+    if (doc.restoreGraphicsState) doc.restoreGraphicsState();
 
     doc.setFontSize(9);
     doc.setFont(undefined, 'normal');

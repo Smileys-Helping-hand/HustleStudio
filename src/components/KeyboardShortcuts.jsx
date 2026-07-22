@@ -24,7 +24,7 @@ export default function KeyboardShortcuts() {
   ];
 
   const handleKeyPress = useCallback((event) => {
-    const key = event.key.toLowerCase();
+    const key = event.key?.toLowerCase() || '';
     const target = event.target;
     
     // Don't trigger shortcuts when typing in input fields
