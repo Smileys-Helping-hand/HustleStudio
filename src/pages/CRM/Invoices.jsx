@@ -4,6 +4,7 @@ import PageHeader from '../../components/common/PageHeader.jsx';
 import { useNotify } from '../../context/NotificationContext.jsx';
 import { useTenant } from '../../context/TenantContext.jsx';
 import { notifyInvoiceCreated } from '../../lib/businessNotifications.js';
+import { generateDocumentPdf } from '../../lib/pdfGenerator.js';
 
 const defaultLineItem = { description: '', quantity: 1, price: 0 };
 
@@ -33,47 +34,38 @@ const Invoices = () => {
   const removeLine = (index) => setLineItems((current) => current.filter((_, idx) => idx !== index));
 
   const generatePdf = async () => {
+    if (!client.name.trim()) {
+      notify({ type: 'error', title: 'Required', description: 'Please enter client name' });
+      return;
+    }
+
     setGenerating(true);
-      // lazy-load jsPDF and autotable plugin
-      const jsPDFModule = await import('jspdf');
-      const JsPDF = jsPDFModule.default || jsPDFModule;
-      await import('jspdf-autotable');
-
-      const doc = new JsPDF();
-      doc.setFontSize(18);
-      doc.text('Hustle Studio Invoice', 14, 18);
-
-      doc.setFontSize(12);
-      doc.text(`Client: ${client.name}`, 14, 30);
-      doc.text(`Email: ${client.contact}`, 14, 36);
-      doc.text(`Address: ${client.address}`, 14, 42);
-
-      doc.autoTable({
-        startY: 50,
-        head: [['Description', 'Qty', 'Price', 'Line Total']],
-        body: lineItems.map((item) => [
-          item.description,
-          item.quantity,
-          `R${Number(item.price).toFixed(2)}`,
-          `R${(Number(item.quantity) * Number(item.price)).toFixed(2)}`,
-        ]),
-      });
-
-      const totalsY = doc.lastAutoTable.finalY + 10;
-      doc.text(`Subtotal: R${totals.subtotal.toFixed(2)}`, 14, totalsY);
-      doc.text(`VAT (15%): R${totals.vat.toFixed(2)}`, 14, totalsY + 6);
-      doc.text(`Total Due: R${totals.total.toFixed(2)}`, 14, totalsY + 12);
-
-      doc.text(`Notes: ${notes}`, 14, totalsY + 24);
-      doc.save(`invoice-${client.name.replace(/\s+/g, '-').toLowerCase()}.pdf`);
-
+    try {
       const dueDate = new Date();
       dueDate.setDate(dueDate.getDate() + 7);
-      
-      // Generate invoice number
-      const invoiceNumber = `INV-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
-      
-      // Send invoice created notification
+      const invoiceNumber = `INV-${Date.now().toString().slice(-6)}`;
+
+      const invoiceData = {
+        type: 'invoice',
+        invoiceNumber,
+        clientName: client.name,
+        clientEmail: client.contact,
+        clientAddress: client.address,
+        companyName: 'Hustle Studio',
+        lineItems: lineItems,
+        subtotal: totals.subtotal,
+        vat: totals.vat,
+        vatRate: 15,
+        includeTax: true,
+        total: totals.total,
+        currency: 'R',
+        notes: notes,
+        dueDate: dueDate,
+        primaryColor: '#6366f1',
+      };
+
+      await generateDocumentPdf(invoiceData, null);
+
       if (activeTenantId) {
         await notifyInvoiceCreated(activeTenantId, notify, {
           id: invoiceNumber,
@@ -83,14 +75,19 @@ const Invoices = () => {
           dueDate,
         });
       }
-      
+
       notify({
-        title: 'Invoice scheduled',
+        title: 'Invoice generated & scheduled',
         description: `${client.name} — follow up by ${dueDate.toLocaleDateString()}.`,
-        type: 'info',
+        type: 'success',
       });
+    } catch (error) {
+      console.error('[Invoice] Generation failed:', error);
+      notify({ type: 'error', title: 'Failed to generate invoice', description: error.message || 'Error generating PDF' });
+    } finally {
       setGenerating(false);
-    };
+    }
+  };
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-[#0e0e18] to-[#1b1830] px-4 pb-16 text-white sm:px-8">

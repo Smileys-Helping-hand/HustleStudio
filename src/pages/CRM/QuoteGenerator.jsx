@@ -7,6 +7,7 @@ import PageHeader from '../../components/common/PageHeader.jsx';
 import { useNotify } from '../../context/NotificationContext.jsx';
 import { useTenant } from '../../context/TenantContext.jsx';
 import { db } from '../../lib/firebase.js';
+import { generateDocumentPdf } from '../../lib/pdfGenerator.js';
 
 const defaultLineItem = { description: '', quantity: 1, price: 0 };
 
@@ -92,105 +93,29 @@ const QuoteGenerator = () => {
 
     setGenerating(true);
     try {
-      const jsPDFModule = await import('jspdf');
-      const JsPDF = jsPDFModule.default || jsPDFModule;
-      await import('jspdf-autotable');
+      const validUntilDate = new Date();
+      validUntilDate.setDate(validUntilDate.getDate() + Number(customization.validityDays || 30));
 
-      const doc = new JsPDF();
-      const pageWidth = doc.internal.pageSize.getWidth();
-
-      // Header
-      doc.setFontSize(24);
-      doc.setTextColor(139, 92, 246);
-      doc.text('QUOTE', pageWidth - 14, 20, { align: 'right' });
-
-      doc.setFontSize(10);
-      doc.setTextColor(100, 100, 100);
-      doc.text(customization.quoteNumber, pageWidth - 14, 28, { align: 'right' });
-      doc.text(`Date: ${new Date().toLocaleDateString()}`, pageWidth - 14, 33, { align: 'right' });
-
-      const validUntil = new Date();
-      validUntil.setDate(validUntil.getDate() + customization.validityDays);
-      doc.text(`Valid until: ${validUntil.toLocaleDateString()}`, pageWidth - 14, 38, { align: 'right' });
-
-      // Company info
-      doc.setFontSize(14);
-      doc.setTextColor(139, 92, 246);
-      doc.text(customization.companyName, 14, 20);
-
-      doc.setFontSize(9);
-      doc.setTextColor(100, 100, 100);
-      doc.text(customization.companyEmail, 14, 26);
-      doc.text(customization.companyPhone, 14, 31);
-
-      // Bill To
-      doc.setFontSize(11);
-      doc.setTextColor(0, 0, 0);
-      doc.text('Bill To:', 14, 55);
-      doc.setFontSize(12);
-      doc.setFont(undefined, 'bold');
-      doc.text(client.name, 14, 61);
-      doc.setFont(undefined, 'normal');
-      doc.setFontSize(10);
-      doc.setTextColor(60, 60, 60);
-      doc.text(client.contact, 14, 66);
-      doc.text(client.address, 14, 71);
-
-      // Line items table
-      doc.autoTable({
-        startY: 85,
-        head: [['Description', 'Qty', 'Rate', 'Amount']],
-        body: lineItems.map((item) => [
-          item.description,
-          item.quantity,
-          `${customization.currency}${Number(item.price).toFixed(2)}`,
-          `${customization.currency}${(Number(item.quantity) * Number(item.price)).toFixed(2)}`,
-        ]),
-        theme: 'striped',
-        headStyles: {
-          fillColor: [139, 92, 246],
-          textColor: 255,
-          fontSize: 10,
-          fontStyle: 'bold',
-        },
-      });
-
-      // Total
-      const finalY = doc.lastAutoTable.finalY + 10;
-      doc.setFontSize(12);
-      doc.setFont(undefined, 'bold');
-      doc.setTextColor(0, 0, 0);
-      doc.text('Total:', pageWidth - 50, finalY);
-      doc.text(`${customization.currency}${totals.total.toFixed(2)}`, pageWidth - 14, finalY, { align: 'right' });
-
-      // Notes
-      if (notes.trim()) {
-        doc.setFont(undefined, 'normal');
-        doc.setFontSize(9);
-        doc.setTextColor(100, 100, 100);
-        doc.text('Notes:', 14, finalY + 20);
-        const splitNotes = doc.splitTextToSize(notes, pageWidth - 28);
-        doc.text(splitNotes, 14, finalY + 25);
-      }
-
-      doc.save(`quote-${customization.quoteNumber}-${client.name.replace(/\s+/g, '-').toLowerCase()}.pdf`);
-
-      // Save to database
       const quoteData = {
+        type: 'quote',
         quoteNumber: customization.quoteNumber,
         clientName: client.name,
         clientEmail: client.contact,
         clientAddress: client.address,
         companyName: customization.companyName,
+        companyAddress: customization.companyAddress,
         companyEmail: customization.companyEmail,
         companyPhone: customization.companyPhone,
         lineItems: lineItems,
+        subtotal: totals.subtotal,
         total: totals.total,
-        currency: customization.currency,
+        currency: customization.currency || 'R',
         notes: notes,
-        validityDays: customization.validityDays,
-        primaryColor: customization.primaryColor,
+        validUntil: validUntilDate,
+        primaryColor: customization.primaryColor || '#8b5cf6',
       };
+
+      await generateDocumentPdf(quoteData, customization.logoPreview);
 
       await saveQuoteToDatabase(quoteData);
 
@@ -201,7 +126,7 @@ const QuoteGenerator = () => {
       });
     } catch (error) {
       console.error('[Quote] Generation failed:', error);
-      notify({ type: 'error', title: 'Failed to generate quote', description: error.message });
+      notify({ type: 'error', title: 'Failed to generate quote', description: error.message || 'Error creating PDF' });
     } finally {
       setGenerating(false);
     }

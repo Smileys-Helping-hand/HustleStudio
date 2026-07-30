@@ -1,6 +1,6 @@
 import ExcelJS from 'exceljs';
 import { jsPDF } from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import { saveAs } from 'file-saver';
 
 /**
@@ -159,7 +159,7 @@ export const exportToPDF = (data, filename = 'export', columns = null, options =
   const rows = data.map(row => cols.map(col => String(row[col.key] ?? '')));
 
   // Add table
-  doc.autoTable({
+  autoTable(doc, {
     startY: 35,
     head: headers,
     body: rows,
